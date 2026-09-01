@@ -1,82 +1,584 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>LLM-Xray</title>
 
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                         sans-serif;
+            background: #0b0f14;
+            color: #e6edf3;
+        }
+
+        header {
+            padding: 24px 32px;
+            border-bottom: 1px solid #252c35;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        header p {
+            margin: 6px 0 0;
+            color: #8b949e;
+        }
+
+        main {
+            max-width: 1400px;
+            margin: auto;
+            padding: 28px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 90px;
+            resize: vertical;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            background: #161b22;
+            color: #e6edf3;
+            font-size: 16px;
+        }
+
+        button {
+            margin-top: 12px;
+            padding: 10px 20px;
+            border: 0;
+            border-radius: 7px;
+            background: #238636;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #2ea043;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: wait;
+        }
+
+        section {
+            margin-top: 28px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+
+        .tokens {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .token {
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+            background: #161b22;
+            cursor: pointer;
+        }
+
+        .token:hover {
+            border-color: #58a6ff;
+        }
+
+        .token-text {
+            font-family: monospace;
+            font-size: 15px;
+        }
+
+        .token-id {
+            display: block;
+            margin-top: 4px;
+            color: #8b949e;
+            font-size: 12px;
+        }
+
+        .pipeline {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .node {
+            width: min(700px, 100%);
+            padding: 16px;
+            border: 1px solid #30363d;
+            border-radius: 10px;
+            background: #161b22;
+        }
+
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .node-name {
+            font-weight: 600;
+        }
+
+        .shape {
+            color: #8b949e;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .arrow {
+            color: #58a6ff;
+            font-size: 24px;
+        }
+
+        .layers {
+            width: min(700px, 100%);
+        }
+
+        .layer {
+            margin-bottom: 8px;
+            border: 1px solid #30363d;
+            border-radius: 8px;
+            background: #161b22;
+            overflow: hidden;
+        }
+
+        .layer-header {
+            padding: 14px;
+            display: flex;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .layer-header:hover {
+            background: #1c2128;
+        }
+
+        .layer-details {
+            display: none;
+            padding: 14px;
+            border-top: 1px solid #30363d;
+            color: #8b949e;
+            font-family: monospace;
+            font-size: 13px;
+        }
+
+        .layer.open .layer-details {
+            display: block;
+        }
+
+        .predictions {
+            width: min(700px, 100%);
+        }
+
+        .prediction {
+            display: grid;
+            grid-template-columns: 100px 1fr 70px;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .prediction-token {
+            font-family: monospace;
+        }
+
+        .bar-container {
+            height: 18px;
+            background: #161b22;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar {
+            height: 100%;
+            background: #58a6ff;
+        }
+
+        .probability {
+            text-align: right;
+            font-family: monospace;
+        }
+
+        .status {
+            margin-top: 10px;
+            color: #8b949e;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
 </head>
 
 <body>
 
+<header>
     <h1>LLM-Xray</h1>
+    <p>Interactive X-ray of a local Hugging Face language model.</p>
+</header>
 
-    <p>
-        Interactive X-ray of a local Hugging Face language model.
-    </p>
+<main>
 
-    <textarea
-        id="prompt"
-        rows="4"
-        cols="80"
-    >The capital of France is</textarea>
+    <section>
+        <div class="section-title">Prompt</div>
 
-    <br><br>
+        <textarea id="prompt">The capital of France is</textarea>
 
-    <button onclick="generate()">
-        Run Model
-    </button>
+        <button id="inspectButton" onclick="inspectModel()">
+            🔬 Inspect Model
+        </button>
 
-    <h2>Tokens</h2>
+        <div id="status" class="status"></div>
+    </section>
 
-    <pre id="tokens"></pre>
 
-    <h2>Generated Text</h2>
+    <section id="modelSection" class="hidden">
 
-    <pre id="output"></pre>
+        <div class="section-title">Model</div>
 
-    <script>
+        <div id="modelInfo" class="node"></div>
 
-        async function generate() {
+    </section>
 
-            const prompt =
-                document.getElementById("prompt").value;
 
-            const response =
-                await fetch("/generate", {
+    <section id="tokenSection" class="hidden">
 
-                    method: "POST",
+        <div class="section-title">1. Tokenization</div>
 
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
+        <div id="tokens" class="tokens"></div>
 
-                    body: JSON.stringify({
-                        prompt: prompt,
-                        max_new_tokens: 32
-                    })
+    </section>
 
-                });
 
-            const data = await response.json();
+    <section id="pipelineSection" class="hidden">
 
-            document.getElementById("tokens").textContent =
-                JSON.stringify(data.tokens, null, 2);
+        <div class="section-title">2. Transformer Pipeline</div>
 
-            document.getElementById("output").textContent =
-                data.generated_text;
+        <div class="pipeline">
+
+            <div class="node">
+                <div class="node-header">
+                    <span class="node-name">Token IDs</span>
+                    <span id="tokenShape" class="shape"></span>
+                </div>
+            </div>
+
+            <div class="arrow">↓</div>
+
+            <div class="node">
+                <div class="node-header">
+                    <span class="node-name">Token Embeddings</span>
+                    <span id="embeddingShape" class="shape"></span>
+                </div>
+            </div>
+
+            <div class="arrow">↓</div>
+
+            <div id="layers" class="layers"></div>
+
+            <div class="arrow">↓</div>
+
+            <div class="node">
+                <div class="node-header">
+                    <span class="node-name">Final RMSNorm</span>
+                    <span id="hiddenShape" class="shape"></span>
+                </div>
+            </div>
+
+            <div class="arrow">↓</div>
+
+            <div class="node">
+                <div class="node-header">
+                    <span class="node-name">LM Head</span>
+                    <span id="logitsShape" class="shape"></span>
+                </div>
+            </div>
+
+            <div class="arrow">↓</div>
+
+            <div class="node">
+                <div class="node-header">
+                    <span class="node-name">Softmax</span>
+                    <span class="shape">49,152 probabilities</span>
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <section id="predictionSection" class="hidden">
+
+        <div class="section-title">3. Next Token Probabilities</div>
+
+        <div id="predictions" class="predictions"></div>
+
+    </section>
+
+</main>
+
+
+<script>
+
+async function inspectModel() {
+
+    const prompt =
+        document.getElementById("prompt").value;
+
+    const button =
+        document.getElementById("inspectButton");
+
+    const status =
+        document.getElementById("status");
+
+    button.disabled = true;
+    status.textContent = "Running model...";
+
+    try {
+
+        const response = await fetch("/inspect", {
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            body: JSON.stringify({
+                prompt: prompt,
+                max_new_tokens: 32
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(
+                `Server returned ${response.status}`
+            );
         }
 
-    </script>
+        const data = await response.json();
+
+        renderModel(data);
+        renderTokens(data);
+        renderPipeline(data);
+        renderPredictions(data);
+
+        status.textContent = "Inspection complete.";
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "Error: " + error.message;
+
+    } finally {
+
+        button.disabled = false;
+
+    }
+}
+
+
+function renderModel(data) {
+
+    document
+        .getElementById("modelSection")
+        .classList.remove("hidden");
+
+    const model = data.model;
+
+    document.getElementById("modelInfo").innerHTML = `
+        <div class="node-header">
+            <span class="node-name">${model.name}</span>
+        </div>
+
+        <div style="margin-top:10px; color:#8b949e">
+            ${model.layers} Transformer layers ·
+            ${model.hidden_size} hidden dimensions ·
+            ${model.vocab_size.toLocaleString()} vocabulary tokens
+        </div>
+    `;
+}
+
+
+function renderTokens(data) {
+
+    document
+        .getElementById("tokenSection")
+        .classList.remove("hidden");
+
+    const container =
+        document.getElementById("tokens");
+
+    container.innerHTML = "";
+
+    data.tokens.forEach(token => {
+
+        const element =
+            document.createElement("div");
+
+        element.className = "token";
+
+        element.innerHTML = `
+            <span class="token-text">
+                ${escapeHtml(token.token)}
+            </span>
+
+            <span class="token-id">
+                ID ${token.token_id}
+            </span>
+        `;
+
+        container.appendChild(element);
+
+    });
+}
+
+
+function renderPipeline(data) {
+
+    document
+        .getElementById("pipelineSection")
+        .classList.remove("hidden");
+
+    document.getElementById("tokenShape").textContent =
+        `[${data.tokens.length}]`;
+
+    document.getElementById("embeddingShape").textContent =
+        formatShape(data.embedding.shape);
+
+    document.getElementById("hiddenShape").textContent =
+        formatShape(data.final_hidden_state.shape);
+
+    document.getElementById("logitsShape").textContent =
+        formatShape(data.logits.shape);
+
+    const layers =
+        document.getElementById("layers");
+
+    layers.innerHTML = "";
+
+    for (let i = 0; i < data.model.layers; i++) {
+
+        const layer =
+            document.createElement("div");
+
+        layer.className = "layer";
+
+        layer.innerHTML = `
+            <div class="layer-header"
+                 onclick="this.parentElement.classList.toggle('open')">
+
+                <span>Transformer Layer ${i}</span>
+
+                <span class="shape">
+                    960 → 960
+                </span>
+
+            </div>
+
+            <div class="layer-details">
+                RMSNorm<br>
+                ↓<br>
+                Q / K / V projections<br>
+                ↓<br>
+                Attention<br>
+                ↓<br>
+                O projection<br>
+                ↓<br>
+                Residual connection<br>
+                ↓<br>
+                RMSNorm<br>
+                ↓<br>
+                MLP<br>
+                ↓<br>
+                Residual connection
+            </div>
+        `;
+
+        layers.appendChild(layer);
+    }
+}
+
+
+function renderPredictions(data) {
+
+    document
+        .getElementById("predictionSection")
+        .classList.remove("hidden");
+
+    const container =
+        document.getElementById("predictions");
+
+    container.innerHTML = "";
+
+    data.next_tokens.forEach(item => {
+
+        const row =
+            document.createElement("div");
+
+        row.className = "prediction";
+
+        const percentage =
+            item.probability * 100;
+
+        row.innerHTML = `
+            <div class="prediction-token">
+                ${escapeHtml(item.token)}
+            </div>
+
+            <div class="bar-container">
+                <div class="bar"
+                     style="width:${percentage}%">
+                </div>
+            </div>
+
+            <div class="probability">
+                ${percentage.toFixed(2)}%
+            </div>
+        `;
+
+        container.appendChild(row);
+
+    });
+}
+
+
+function formatShape(shape) {
+    return "[" + shape.join(" × ") + "]";
+}
+
+
+function escapeHtml(value) {
+
+    return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+</script>
 
 </body>
-
 </html>

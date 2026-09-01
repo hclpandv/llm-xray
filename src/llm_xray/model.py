@@ -111,9 +111,6 @@ class ModelManager:
         if self.model is None:
             raise RuntimeError("Model has not been loaded.")
 
-        self.tracer = TransformerTracer(self.model)
-        self.tracer.register()
-
         encoded = self.tokenizer(
             prompt,
             return_tensors="pt",
@@ -126,35 +123,203 @@ class ModelManager:
 
         input_ids = encoded["input_ids"]
 
-        # The model's actual embedding layer.
-        embedding_layer = self.model.get_input_embeddings()
+        # ---------------------------------------------------------
+        # Embedding
+        # ---------------------------------------------------------
 
+        embedding_layer = self.model.get_input_embeddings()
         embeddings = embedding_layer(input_ids)
 
-        # Run the actual Transformer.
+        # ---------------------------------------------------------
+        # Run the actual Transformer
+        # ---------------------------------------------------------
+
         outputs = self.model(
             **encoded,
             output_hidden_states=True,
         )
-        trace = self.tracer.get_trace()
-
-        self.tracer.remove()
 
         logits = outputs.logits
 
-        # Hidden state at the final input position.
+        # Final hidden representation for the last input token.
         final_hidden_state = outputs.hidden_states[-1][:, -1, :]
 
+        # ---------------------------------------------------------
+        # Model metadata
+        # ---------------------------------------------------------
+
+        config = self.model.config
+
+        # ---------------------------------------------------------
+        # Describe the Transformer architecture
+        # ---------------------------------------------------------
+
+        layers = []
+
+        for layer_index, layer in enumerate(self.model.model.layers):
+
+            layers.append(
+                {
+                    "index": layer_index,
+                    "components": [
+                        {
+                            "name": "input_layernorm",
+                            "type": "normalization",
+                            "shape": [1, input_ids.shape[1], config.hidden_size],
+                        },
+                        {
+                            "name": "attention",
+                            "type": "attention",
+                            "components": [
+                                {
+                                    "name": "q_proj",
+                                    "shape": [
+                                        1,
+                                        input_ids.shape[1],
+                                        layer.self_attn.q_proj.out_features,
+                                    ],
+                                },
+                                {
+                                    "name": "k_proj",
+                                    "shape": [
+                                        1,
+                                        input_ids.shape[1],
+                                        layer.self_attn.k_proj.out_features,
+                                    ],
+                                },
+                                {
+                                    "name": "v_proj",
+                                    "shape": [
+                                        1,
+                                        input_ids.shape[1],
+                                        layer.self_attn.v_proj.out_features,
+                                    ],
+                                },
+                                {
+                                    "name": "o_proj",
+                                    "shape": [
+                                        1,
+                                        input_ids.shape[1],
+                                        layer.self_attn.o_proj.out_features,
+                                    ],
+                                },
+                            ],
+                        },
+                        {
+                            "name": "post_attention_layernorm",
+                            "type": "normalization",
+                            "shape": [1, input_ids.shape[1], config.hidden_size],
+                        },
+                        {
+                            "name": "mlp",
+                            "type": "mlp",
+                            "components": [
+                                {
+                                    "name": "gate_proj",
+                                    "shape": [
+                                        1,
+                                        input_ids.shape[1],
+                                        layer.mlp.gate_proj.out_features,
+                                    ],
+                                },
+                                {
+                                    "name": "up_proj",
+                                    "shape": [
+                                        1,
+                                        input_ids.shape[1],
+                                        layer.mlp.up_proj.out_features,
+                                    ],
+                                },
+                                {
+                                    "name": "down_proj",
+                                    "shape": [
+                                        1,
+                                        input_ids.shape[1],
+                                        layer.mlp.down_proj.out_features,
+                                    ],
+                                },
+                            ],
+                        },
+                    ],
+                }
+            )
+
+        # ---------------------------------------------------------
+        # Top next-token predictions
+        # ---------------------------------------------------------
+
+        last_logits = logits[0, -1]
+
+        probabilities = torch.softmax(last_logits, dim=-1)
+
+        top_probabilities, top_ids = torch.topk(
+            probabilities,
+            k=10,
+        )
+
+        next_tokens = []
+
+        for probability, token_id in zip(
+            top_probabilities,
+            top_ids,
+        ):
+            token_id = token_id.item()
+
+            next_tokens.append(
+                {
+                    "token": self.tokenizer.decode([token_id]),
+                    "token_id": token_id,
+                    "probability": probability.item(),
+                }
+            )
+
+        # ---------------------------------------------------------
+        # Response
+        # ---------------------------------------------------------
+
         return {
-            "input_ids": input_ids[0].tolist(),
-            "tokens": self.tokenizer.convert_ids_to_tokens(
-                input_ids[0]
-            ),
-            "embedding_shape": list(embeddings.shape),
-            "embedding_vectors": embeddings[0].detach().cpu().tolist(),
-            "hidden_state_shape": list(final_hidden_state.shape),
-            "hidden_state": final_hidden_state[0].detach().cpu().tolist(),
-            "logits_shape": list(logits.shape),
-            "logits": logits[0, -1].detach().cpu().tolist(),
-            "trace": trace
+            "model": {
+                "name": config.name_or_path,
+                "layers": config.num_hidden_layers,
+                "hidden_size": config.hidden_size,
+                "vocab_size": config.vocab_size,
+            },
+
+            "prompt": prompt,
+
+            "tokens": [
+                {
+                    "position": position,
+                    "token": token,
+                    "token_id": token_id,
+                }
+                for position, (token, token_id)
+                in enumerate(
+                    zip(
+                        self.tokenizer.convert_ids_to_tokens(
+                            input_ids[0]
+                        ),
+                        input_ids[0].tolist(),
+                    )
+                )
+            ],
+
+            "embedding": {
+                "name": "token_embeddings",
+                "shape": list(embeddings.shape),
+            },
+
+            "layers": layers,
+
+            "final_hidden_state": {
+                "name": "final_hidden_state",
+                "shape": list(final_hidden_state.shape),
+            },
+
+            "logits": {
+                "name": "next_token_logits",
+                "shape": list(logits.shape),
+            },
+
+            "next_tokens": next_tokens,
         }
