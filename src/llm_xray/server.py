@@ -40,6 +40,10 @@ def generate(request: GenerationRequest):
     )
 
 
+@app.post("/inspect")
+def inspect(request: GenerationRequest):
+    return model_manager.inspect_prompt(request.prompt)
+
 app.mount(
     "/web",
     StaticFiles(directory=WEB_DIR),

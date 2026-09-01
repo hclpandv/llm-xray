@@ -3,12 +3,14 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from .config import MODEL_NAME
 from .schemas import GenerationResponse, TokenInfo
+from .tracer import TransformerTracer
 
 
 class ModelManager:
     def __init__(self):
         self.model = None
         self.tokenizer = None
+        self.tracer = None
         self.device = self._detect_device()
 
     @staticmethod
@@ -34,6 +36,8 @@ class ModelManager:
 
         self.model.to(self.device)
         self.model.eval()
+        self.tracer = TransformerTracer(self.model)
+        self.tracer.register()
 
         print("Model loaded.")
 
@@ -101,3 +105,51 @@ class ModelManager:
             tokens=tokens,
             generated_text=generated_text,
         )
+
+    @torch.inference_mode()
+    def inspect_prompt(self, prompt: str) -> dict:
+        if self.model is None:
+            raise RuntimeError("Model has not been loaded.")
+
+        encoded = self.tokenizer(
+            prompt,
+            return_tensors="pt",
+        )
+
+        encoded = {
+            key: value.to(self.device)
+            for key, value in encoded.items()
+        }
+
+        input_ids = encoded["input_ids"]
+
+        # The model's actual embedding layer.
+        embedding_layer = self.model.get_input_embeddings()
+
+        embeddings = embedding_layer(input_ids)
+
+        # Run the actual Transformer.
+        outputs = self.model(
+            **encoded,
+            output_hidden_states=True,
+        )
+        trace = self.tracer.get_trace()
+
+        logits = outputs.logits
+
+        # Hidden state at the final input position.
+        final_hidden_state = outputs.hidden_states[-1][:, -1, :]
+
+        return {
+            "input_ids": input_ids[0].tolist(),
+            "tokens": self.tokenizer.convert_ids_to_tokens(
+                input_ids[0]
+            ),
+            "embedding_shape": list(embeddings.shape),
+            "embedding_vectors": embeddings[0].detach().cpu().tolist(),
+            "hidden_state_shape": list(final_hidden_state.shape),
+            "hidden_state": final_hidden_state[0].detach().cpu().tolist(),
+            "logits_shape": list(logits.shape),
+            "logits": logits[0, -1].detach().cpu().tolist(),
+            "trace": trace
+        }
