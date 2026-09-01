@@ -36,8 +36,8 @@ class ModelManager:
 
         self.model.to(self.device)
         self.model.eval()
-        self.tracer = TransformerTracer(self.model)
-        self.tracer.register()
+        #self.tracer = TransformerTracer(self.model)
+        #self.tracer.register()
 
         print("Model loaded.")
 
@@ -111,6 +111,9 @@ class ModelManager:
         if self.model is None:
             raise RuntimeError("Model has not been loaded.")
 
+        self.tracer = TransformerTracer(self.model)
+        self.tracer.register()
+
         encoded = self.tokenizer(
             prompt,
             return_tensors="pt",
@@ -134,6 +137,8 @@ class ModelManager:
             output_hidden_states=True,
         )
         trace = self.tracer.get_trace()
+
+        self.tracer.remove()
 
         logits = outputs.logits
 
