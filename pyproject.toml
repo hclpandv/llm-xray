@@ -1,0 +1,26 @@
+[project]
+name = "llm-xray"
+version = "0.1.0"
+description = "Interactive X-ray visualization for local Hugging Face language models."
+readme = "README.md"
+requires-python = ">=3.11"
+
+dependencies = [
+    "fastapi>=0.141.1",
+    "uvicorn>=0.52.4",
+    "transformers>=5.16.1",
+    "torch>=2.13.0",
+    "safetensors>=0.8.0",
+    "sentencepiece>=0.2.2",
+    "python-multipart>=0.0.32",
+]
+
+[project.scripts]
+llm-xray = "llm_xray.server:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/llm_xray"]

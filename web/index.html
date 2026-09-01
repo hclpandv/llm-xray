@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>LLM-Xray</title>
+
+</head>
+
+<body>
+
+    <h1>LLM-Xray</h1>
+
+    <p>
+        Interactive X-ray of a local Hugging Face language model.
+    </p>
+
+    <textarea
+        id="prompt"
+        rows="4"
+        cols="80"
+    >The capital of France is</textarea>
+
+    <br><br>
+
+    <button onclick="generate()">
+        Run Model
+    </button>
+
+    <h2>Tokens</h2>
+
+    <pre id="tokens"></pre>
+
+    <h2>Generated Text</h2>
+
+    <pre id="output"></pre>
+
+    <script>
+
+        async function generate() {
+
+            const prompt =
+                document.getElementById("prompt").value;
+
+            const response =
+                await fetch("/generate", {
+
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        prompt: prompt,
+                        max_new_tokens: 32
+                    })
+
+                });
+
+            const data = await response.json();
+
+            document.getElementById("tokens").textContent =
+                JSON.stringify(data.tokens, null, 2);
+
+            document.getElementById("output").textContent =
+                data.generated_text;
+        }
+
+    </script>
+
+</body>
+
+</html>
