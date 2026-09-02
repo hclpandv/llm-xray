@@ -3,24 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>LLM-Xray</title>
 
     <style>
-
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
-
-            font-family:
-                -apple-system,
-                BlinkMacSystemFont,
-                "Segoe UI",
-                sans-serif;
-
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
             background: #0f1117;
             color: #e6e8ef;
         }
@@ -31,18 +21,16 @@
             padding: 40px 24px 80px;
         }
 
-        header {
-            margin-bottom: 32px;
-        }
+        header { margin-bottom: 32px; }
 
         h1 {
             margin: 0 0 8px;
             font-size: 34px;
         }
 
-        .subtitle {
+        .subtitle, .status {
             color: #8d93a5;
-            font-size: 15px;
+            font-size: 14px;
         }
 
         .card {
@@ -58,76 +46,38 @@
             font-size: 20px;
         }
 
-
-        /* ---------------------------------------------------------
-           Prompt
-           --------------------------------------------------------- */
-
         textarea {
             width: 100%;
             min-height: 100px;
             resize: vertical;
-
             background: #0f1117;
             color: #e6e8ef;
-
             border: 1px solid #303645;
             border-radius: 10px;
-
             padding: 14px;
             font-size: 15px;
             font-family: inherit;
-
             outline: none;
         }
 
-        textarea:focus {
-            border-color: #6978ff;
-        }
+        textarea:focus { border-color: #6978ff; }
 
         button {
             margin-top: 14px;
-
             background: #6675f5;
             color: white;
-
             border: 0;
             border-radius: 9px;
-
             padding: 11px 18px;
-
             font-size: 14px;
             font-weight: 600;
-
             cursor: pointer;
         }
 
-        button:hover {
-            opacity: 0.9;
-        }
+        button:hover { opacity: .9; }
+        button:disabled { opacity: .5; cursor: wait; }
 
-        button:disabled {
-            opacity: 0.5;
-            cursor: wait;
-        }
-
-        .status {
-            margin-top: 12px;
-            color: #8d93a5;
-            font-size: 14px;
-        }
-
-
-        /* ---------------------------------------------------------
-           Model
-           --------------------------------------------------------- */
-
-        .model-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 20px;
-        }
+        /* Model */
 
         .model-name {
             font-size: 18px;
@@ -140,14 +90,9 @@
             font-size: 14px;
         }
 
+        /* Tokenization */
 
-        /* ---------------------------------------------------------
-           Tokenization
-           --------------------------------------------------------- */
-
-        .tokens {
-            margin-top: 16px;
-        }
+        .tokens { margin-top: 16px; }
 
         .tokenizer-info {
             display: grid;
@@ -163,10 +108,13 @@
             padding: 14px;
         }
 
-        .tokenizer-label {
+        .tokenizer-label,
+        .embedding-step-label {
             color: #858ca0;
-            font-size: 11px;
+            font-size: 10px;
             margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
         }
 
         .tokenizer-value {
@@ -191,7 +139,6 @@
 
         .token-table-wrapper {
             overflow-x: auto;
-
             border: 1px solid #303645;
             border-radius: 10px;
         }
@@ -214,24 +161,17 @@
             font-weight: 600;
         }
 
-        .token-table tr:last-child td {
-            border-bottom: none;
-        }
+        .token-table tr:last-child td { border-bottom: none; }
 
         .token-row {
             cursor: pointer;
-            transition: background 0.15s ease;
+            transition: background .15s ease;
         }
 
-        .token-row:hover {
-            background: #202430;
-        }
+        .token-row:hover { background: #202430; }
+        .token-row.selected { background: #252b3a; }
 
-        .token-row.selected {
-            background: #252b3a;
-        }
-
-        .token-table code {
+        code {
             font-family:
                 ui-monospace,
                 SFMono-Regular,
@@ -261,39 +201,20 @@
             background: #171b25;
             border: 1px solid #303645;
             border-radius: 8px;
-
             padding: 12px 14px;
-
             min-width: 120px;
-
             text-align: center;
-        }
-
-        .embedding-step-label {
-            color: #858ca0;
-            font-size: 10px;
-            margin-bottom: 7px;
-
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
         }
 
         .embedding-step code,
         .embedding-vector code {
-            font-family:
-                ui-monospace,
-                SFMono-Regular,
-                Menlo,
-                Monaco,
-                Consolas,
-                monospace;
-
             font-size: 13px;
         }
 
-        .embedding-subtext {
+        .embedding-subtext,
+        .tokenizer-note {
             color: #70788c;
-            font-size: 10px;
+            font-size: 11px;
             margin-top: 5px;
         }
 
@@ -309,46 +230,27 @@
 
         .tokenizer-note {
             color: #858ca0;
-            font-size: 12px;
             line-height: 1.6;
             margin-top: 12px;
         }
 
-        .tokenizer-note code {
-            color: #c8cedd;
-        }
-
-
-        /* ---------------------------------------------------------
-           Pipeline
-           --------------------------------------------------------- */
+        /* Pipeline */
 
         .pipeline {
             display: flex;
             flex-direction: column;
-            gap: 0;
             margin-top: 20px;
-        }
-
-        .pipeline-step {
-            display: flex;
-            align-items: center;
-            gap: 14px;
         }
 
         .pipeline-box {
             width: 100%;
-
             background: #202430;
             border: 1px solid #303645;
             border-radius: 9px;
-
             padding: 13px 15px;
         }
 
-        .pipeline-name {
-            font-weight: 600;
-        }
+        .pipeline-name { font-weight: 600; }
 
         .pipeline-shape {
             color: #8d93a5;
@@ -363,14 +265,9 @@
             padding: 5px;
         }
 
+        /* Transformer layers */
 
-        /* ---------------------------------------------------------
-           Execution trace
-           --------------------------------------------------------- */
-
-        .layers {
-            margin-top: 20px;
-        }
+        .layers { margin-top: 20px; }
 
         .layer {
             border: 1px solid #2b303d;
@@ -384,28 +281,20 @@
             width: 100%;
             margin: 0;
             padding: 15px 17px;
-
             background: #1c202b;
             color: #e6e8ef;
-
             border: 0;
             border-radius: 0;
-
             display: flex;
             justify-content: space-between;
             align-items: center;
-
             cursor: pointer;
             text-align: left;
         }
 
-        .layer-header:hover {
-            background: #222735;
-        }
+        .layer-header:hover { background: #222735; }
 
-        .layer-title {
-            font-weight: 600;
-        }
+        .layer-title { font-weight: 600; }
 
         .layer-count {
             color: #858ca0;
@@ -414,72 +303,165 @@
 
         .layer-body {
             display: none;
-            padding: 14px;
+            padding: 18px;
         }
 
-        .layer.open .layer-body {
-            display: block;
-        }
+        .layer.open .layer-body { display: block; }
 
-        .trace-entry {
-            background: #191d27;
-            border: 1px solid #292e3a;
-            border-radius: 8px;
+        /* Visual graph */
 
-            margin-bottom: 8px;
-            overflow: hidden;
-        }
-
-        .trace-header {
-            padding: 11px 13px;
-
-            cursor: pointer;
-
+        .transformer-graph {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
             align-items: center;
-
-            gap: 15px;
+            padding: 8px 0 16px;
         }
 
-        .trace-header:hover {
-            background: #202430;
+        .graph-node {
+            width: min(520px, 100%);
+            background: #1a1e28;
+            border: 1px solid #343a4a;
+            border-radius: 10px;
+            padding: 12px 15px;
+            cursor: pointer;
+            transition:
+                border-color .15s ease,
+                background .15s ease,
+                transform .15s ease;
+            text-align: left;
         }
 
-        .trace-name {
-            font-family: monospace;
+        .graph-node:hover {
+            background: #222735;
+            border-color: #59647d;
+            transform: translateY(-1px);
+        }
+
+        .graph-node.selected {
+            border-color: #6978ff;
+            background: #252b3a;
+        }
+
+        .graph-node.conceptual {
+            border-style: dashed;
+            cursor: default;
+            opacity: .85;
+        }
+
+        .graph-node.conceptual:hover {
+            transform: none;
+            background: #1a1e28;
+        }
+
+        .node-title {
+            font-weight: 600;
             font-size: 13px;
         }
 
-        .trace-shape {
+        .node-subtitle {
             color: #858ca0;
             font-family: monospace;
             font-size: 11px;
-            white-space: nowrap;
+            margin-top: 4px;
         }
 
-        .trace-details {
-            display: none;
+        .node-arrow {
+            color: #596176;
+            font-size: 18px;
+            line-height: 25px;
+        }
 
-            padding: 12px 13px;
+        .attention-branches {
+            width: min(700px, 100%);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            position: relative;
+        }
 
+        .attention-branches::before {
+            content: "";
+            position: absolute;
+            top: -8px;
+            left: 16.5%;
+            right: 16.5%;
+            border-top: 1px solid #394052;
+        }
+
+        .branch {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 7px;
+        }
+
+        .branch .graph-node {
+            width: 100%;
+        }
+
+        .branch-arrow {
+            color: #596176;
+            font-size: 15px;
+        }
+
+        .attention-join {
+            width: min(700px, 100%);
+            height: 25px;
+            border-bottom: 1px solid #394052;
+            position: relative;
+            margin-bottom: 0;
+        }
+
+        .attention-join::after {
+            content: "▼";
+            position: absolute;
+            bottom: -10px;
+            left: calc(50% - 5px);
+            color: #596176;
+            font-size: 10px;
+        }
+
+        .residual-label {
+            color: #6f778b;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            margin: 3px 0;
+        }
+
+        /* Detail panel */
+
+        .trace-detail {
             border-top: 1px solid #292e3a;
-
-            background: #11141b;
+            margin-top: 8px;
+            padding-top: 16px;
         }
 
-        .trace-entry.open .trace-details {
-            display: block;
+        .trace-detail-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 15px;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+
+        .trace-detail-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .trace-detail-shape {
+            color: #9da5ff;
+            font-family: monospace;
+            font-size: 12px;
         }
 
         .metadata {
             display: flex;
             gap: 20px;
             flex-wrap: wrap;
-
             color: #858ca0;
             font-size: 12px;
-
             margin-bottom: 12px;
         }
 
@@ -493,21 +475,15 @@
             background: #0b0d12;
             border: 1px solid #252a35;
             border-radius: 7px;
-
             padding: 10px;
-
             font-family: monospace;
             font-size: 11px;
-
             overflow-x: auto;
             white-space: pre-wrap;
             word-break: break-word;
         }
 
-
-        /* ---------------------------------------------------------
-           Probabilities
-           --------------------------------------------------------- */
+        /* Probabilities */
 
         .probabilities {
             display: grid;
@@ -518,183 +494,119 @@
         .probability {
             display: grid;
             grid-template-columns: 90px 1fr 70px;
-
             align-items: center;
-
             gap: 12px;
         }
 
         .probability-label {
             font-family: monospace;
             font-size: 13px;
-
             overflow: hidden;
             text-overflow: ellipsis;
         }
 
         .probability-bar {
             height: 8px;
-
             background: #252a35;
             border-radius: 999px;
-
             overflow: hidden;
         }
 
         .probability-fill {
             height: 100%;
-
             background: #6675f5;
             border-radius: 999px;
-
-            transition: width 0.4s ease;
+            transition: width .4s ease;
         }
 
         .probability-value {
             text-align: right;
-
             color: #9da5ff;
-
             font-size: 13px;
-
             font-variant-numeric: tabular-nums;
         }
 
-
-        /* ---------------------------------------------------------
-           Generation
-           --------------------------------------------------------- */
+        /* Generation */
 
         .generated-text {
             background: #0f1117;
             border: 1px solid #303645;
             border-radius: 10px;
-
             padding: 16px;
-
             font-size: 16px;
             line-height: 1.6;
-
             white-space: pre-wrap;
         }
 
-
-        /* ---------------------------------------------------------
-           Misc
-           --------------------------------------------------------- */
-
-        .empty {
-            color: #858ca0;
-            font-size: 14px;
-        }
-
-
-        /* ---------------------------------------------------------
-           Responsive
-           --------------------------------------------------------- */
-
         @media (max-width: 700px) {
-
             .tokenizer-info {
                 grid-template-columns: 1fr;
-            }
-
-            .embedding-arrow {
-                display: none;
             }
 
             .embedding-flow {
                 flex-direction: column;
             }
 
+            .embedding-arrow {
+                display: none;
+            }
+
             .embedding-step,
             .embedding-vector {
                 width: 100%;
+                max-width: none;
+            }
+
+            .attention-branches {
+                grid-template-columns: 1fr;
+            }
+
+            .attention-branches::before,
+            .attention-join {
+                display: none;
             }
         }
-
     </style>
 </head>
-
 
 <body>
 
 <div class="container">
 
-
-    <!-- Header -->
-
     <header>
-
         <h1>LLM-Xray</h1>
-
         <div class="subtitle">
             Interactive X-ray of a local Hugging Face language model.
         </div>
-
     </header>
-
 
     <!-- Prompt -->
 
     <section class="card">
-
         <h2>Prompt</h2>
 
         <textarea id="prompt">The capital of France is</textarea>
 
-        <button
-            id="inspectButton"
-            onclick="inspectModel()"
-        >
+        <button id="inspectButton" onclick="inspectModel()">
             🔬 Inspect Model
         </button>
 
         <div id="status" class="status"></div>
-
     </section>
-
 
     <!-- Model -->
 
-    <section
-        id="modelCard"
-        class="card"
-        style="display:none"
-    >
+    <section id="modelCard" class="card" style="display:none">
+        <div class="status">Model</div>
 
-        <div class="model-header">
+        <div id="modelName" class="model-name"></div>
 
-            <div>
-
-                <div class="status">
-                    Model
-                </div>
-
-                <div
-                    id="modelName"
-                    class="model-name"
-                ></div>
-
-                <div
-                    id="modelStats"
-                    class="model-stats"
-                ></div>
-
-            </div>
-
-        </div>
-
+        <div id="modelStats" class="model-stats"></div>
     </section>
-
 
     <!-- Tokenization -->
 
-    <section
-        id="tokenCard"
-        class="card"
-        style="display:none"
-    >
+    <section id="tokenCard" class="card" style="display:none">
 
         <h2>1. Tokenization</h2>
 
@@ -702,223 +614,105 @@
 
     </section>
 
-
     <!-- Pipeline -->
 
-    <section
-        id="pipelineCard"
-        class="card"
-        style="display:none"
-    >
+    <section id="pipelineCard" class="card" style="display:none">
 
         <h2>2. Transformer Pipeline</h2>
 
         <div class="pipeline">
 
+            <div class="pipeline-box">
+                <div class="pipeline-name">Token IDs</div>
+                <div id="tokenShape" class="pipeline-shape"></div>
+            </div>
 
-            <div class="pipeline-step">
+            <div class="arrow">↓</div>
 
-                <div class="pipeline-box">
+            <div class="pipeline-box">
+                <div class="pipeline-name">Token Embeddings</div>
+                <div id="embeddingShape" class="pipeline-shape"></div>
+            </div>
 
-                    <div class="pipeline-name">
-                        Token IDs
-                    </div>
+            <div class="arrow">↓</div>
 
-                    <div
-                        id="tokenShape"
-                        class="pipeline-shape"
-                    ></div>
-
+            <div class="pipeline-box">
+                <div class="pipeline-name">32 Transformer Layers</div>
+                <div class="pipeline-shape">
+                    Hidden size: 960
                 </div>
-
             </div>
 
+            <div class="arrow">↓</div>
 
-            <div class="arrow">
-                ↓
-            </div>
-
-
-            <div class="pipeline-step">
-
-                <div class="pipeline-box">
-
-                    <div class="pipeline-name">
-                        Token Embeddings
-                    </div>
-
-                    <div
-                        id="embeddingShape"
-                        class="pipeline-shape"
-                    ></div>
-
+            <div class="pipeline-box">
+                <div class="pipeline-name">Final RMSNorm</div>
+                <div class="pipeline-shape">
+                    [1 × 960]
                 </div>
-
             </div>
 
+            <div class="arrow">↓</div>
 
-            <div class="arrow">
-                ↓
+            <div class="pipeline-box">
+                <div class="pipeline-name">LM Head</div>
+                <div id="logitsShape" class="pipeline-shape"></div>
             </div>
 
+            <div class="arrow">↓</div>
 
-            <div class="pipeline-step">
-
-                <div class="pipeline-box">
-
-                    <div class="pipeline-name">
-                        32 Transformer Layers
-                    </div>
-
-                    <div class="pipeline-shape">
-                        Hidden size: 960
-                    </div>
-
+            <div class="pipeline-box">
+                <div class="pipeline-name">Softmax</div>
+                <div class="pipeline-shape">
+                    49,152 probabilities
                 </div>
-
-            </div>
-
-
-            <div class="arrow">
-                ↓
-            </div>
-
-
-            <div class="pipeline-step">
-
-                <div class="pipeline-box">
-
-                    <div class="pipeline-name">
-                        Final RMSNorm
-                    </div>
-
-                    <div class="pipeline-shape">
-                        [1 × 960]
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div class="arrow">
-                ↓
-            </div>
-
-
-            <div class="pipeline-step">
-
-                <div class="pipeline-box">
-
-                    <div class="pipeline-name">
-                        LM Head
-                    </div>
-
-                    <div
-                        id="logitsShape"
-                        class="pipeline-shape"
-                    ></div>
-
-                </div>
-
-            </div>
-
-
-            <div class="arrow">
-                ↓
-            </div>
-
-
-            <div class="pipeline-step">
-
-                <div class="pipeline-box">
-
-                    <div class="pipeline-name">
-                        Softmax
-                    </div>
-
-                    <div class="pipeline-shape">
-                        49,152 probabilities
-                    </div>
-
-                </div>
-
             </div>
 
         </div>
-
     </section>
-
 
     <!-- Execution -->
 
-    <section
-        id="executionCard"
-        class="card"
-        style="display:none"
-    >
+    <section id="executionCard" class="card" style="display:none">
 
         <h2>3. Transformer Execution Trace</h2>
 
         <div class="status">
-            These tensors were captured from the model's actual
-            forward pass. Expand a layer to inspect its
-            intermediate tensors.
+            Actual tensors captured during the model's forward pass.
+            Expand a layer, then click a node to inspect its tensor.
         </div>
 
-        <div
-            id="layers"
-            class="layers"
-        ></div>
+        <div id="layers" class="layers"></div>
 
     </section>
 
+    <!-- Probabilities -->
 
-    <!-- Next token -->
-
-    <section
-        id="probabilityCard"
-        class="card"
-        style="display:none"
-    >
+    <section id="probabilityCard" class="card" style="display:none">
 
         <h2>4. Next Token Probabilities</h2>
 
-        <div
-            id="probabilities"
-            class="probabilities"
-        ></div>
+        <div id="probabilities" class="probabilities"></div>
 
     </section>
-
 
     <!-- Generation -->
 
-    <section
-        id="generationCard"
-        class="card"
-        style="display:none"
-    >
+    <section id="generationCard" class="card" style="display:none">
 
         <h2>5. Generation</h2>
 
-        <div
-            id="generatedText"
-            class="generated-text"
-        ></div>
+        <div id="generatedText" class="generated-text"></div>
 
     </section>
 
-
 </div>
-
 
 <script>
 
-
-/* ---------------------------------------------------------
+/* =========================================================
    Main inspection
-   --------------------------------------------------------- */
+   ========================================================= */
 
 async function inspectModel() {
 
@@ -931,62 +725,43 @@ async function inspectModel() {
     const status =
         document.getElementById("status");
 
-
     button.disabled = true;
-
 
     status.textContent =
         "Running the model and capturing execution trace...";
 
-
     try {
 
         const response = await fetch("/inspect", {
-
             method: "POST",
-
             headers: {
                 "Content-Type": "application/json"
             },
-
             body: JSON.stringify({
                 prompt: prompt
             })
-
         });
 
-
         if (!response.ok) {
-
             throw new Error(
                 `Request failed: ${response.status}`
             );
-
         }
 
-
-        const data =
-            await response.json();
-
+        const data = await response.json();
 
         renderModel(data);
-
         renderTokens(data);
-
         renderPipeline(data);
-
         renderExecutionTrace(data);
-
         renderProbabilities(data);
 
         await renderGeneration(prompt);
-
 
         status.textContent =
             `Inspection complete — captured ` +
             `${data.execution_trace.length} operations ` +
             `during the model's forward pass.`;
-
 
     } catch (error) {
 
@@ -995,30 +770,25 @@ async function inspectModel() {
         status.textContent =
             `Error: ${error.message}`;
 
-
     } finally {
 
         button.disabled = false;
 
     }
-
 }
 
 
-/* ---------------------------------------------------------
+/* =========================================================
    Model
-   --------------------------------------------------------- */
+   ========================================================= */
 
 function renderModel(data) {
 
     document.getElementById("modelCard")
         .style.display = "block";
 
-
     document.getElementById("modelName")
-        .textContent =
-            data.model.name;
-
+        .textContent = data.model.name;
 
     document.getElementById("modelStats")
         .textContent =
@@ -1028,150 +798,88 @@ function renderModel(data) {
 }
 
 
-/* ---------------------------------------------------------
+/* =========================================================
    Tokens
-   --------------------------------------------------------- */
+   ========================================================= */
 
 function renderTokens(data) {
 
     document.getElementById("tokenCard")
         .style.display = "block";
 
-
     const container =
         document.getElementById("tokens");
-
 
     const tokenizer =
         data.tokenizer;
 
-
     const embedding =
         data.embedding;
 
-
     let html = "";
 
-
-    /*
-     * Tokenizer metadata
-     */
-
     html += `
-
         <div class="tokenizer-info">
 
-
             <div class="tokenizer-stat">
-
-                <div class="tokenizer-label">
-                    Tokenizer
-                </div>
-
+                <div class="tokenizer-label">Tokenizer</div>
                 <div class="tokenizer-value">
                     ${escapeHtml(tokenizer.class)}
                 </div>
-
             </div>
 
-
             <div class="tokenizer-stat">
-
-                <div class="tokenizer-label">
-                    Algorithm
-                </div>
-
+                <div class="tokenizer-label">Algorithm</div>
                 <div class="tokenizer-value">
                     ${escapeHtml(
                         tokenizer.model_type || "Unknown"
                     )}
                 </div>
-
             </div>
 
-
             <div class="tokenizer-stat">
-
-                <div class="tokenizer-label">
-                    Vocabulary
-                </div>
-
+                <div class="tokenizer-label">Vocabulary</div>
                 <div class="tokenizer-value">
                     ${tokenizer.vocab_size.toLocaleString()}
                     tokens
                 </div>
-
             </div>
 
-
         </div>
-
 
         <div class="tokenizer-name">
             ${escapeHtml(tokenizer.name)}
         </div>
 
-    `;
-
-
-    /*
-     * Token table
-     */
-
-    html += `
-
         <div class="token-section-title">
             Tokens
         </div>
-
 
         <div class="token-table-wrapper">
 
             <table class="token-table">
 
                 <thead>
-
                     <tr>
-
-                        <th>
-                            Position
-                        </th>
-
-                        <th>
-                            Token
-                        </th>
-
-                        <th>
-                            ID
-                        </th>
-
-                        <th>
-                            Decoded text
-                        </th>
-
+                        <th>Position</th>
+                        <th>Token</th>
+                        <th>ID</th>
+                        <th>Decoded text</th>
                     </tr>
-
                 </thead>
 
-
                 <tbody>
-
     `;
-
 
     for (const token of data.tokens) {
 
         html += `
-
             <tr
                 class="token-row"
                 data-position="${token.position}"
                 onclick="selectToken(${token.position})"
             >
-
-                <td>
-                    ${token.position}
-                </td>
+                <td>${token.position}</td>
 
                 <td>
                     <code>
@@ -1180,9 +888,7 @@ function renderTokens(data) {
                 </td>
 
                 <td>
-                    <code>
-                        ${token.token_id}
-                    </code>
+                    <code>${token.token_id}</code>
                 </td>
 
                 <td>
@@ -1190,112 +896,72 @@ function renderTokens(data) {
                         ${escapeHtml(token.decoded)}
                     </code>
                 </td>
-
             </tr>
-
         `;
 
     }
 
-
     html += `
-
                 </tbody>
-
             </table>
-
         </div>
-
     `;
-
-
-    /*
-     * Embedding lookup
-     */
 
     const firstToken =
         data.tokens[0];
 
-
     html += `
-
         <div class="token-section-title">
             Token → Embedding
         </div>
-
 
         <div class="embedding-explanation">
 
             <div class="embedding-flow">
 
-
                 <div class="embedding-step">
-
                     <div class="embedding-step-label">
                         Token
                     </div>
-
                     <code id="selectedToken">
                         ${escapeHtml(
                             firstToken?.token || ""
                         )}
                     </code>
-
                 </div>
 
-
-                <div class="embedding-arrow">
-                    ↓
-                </div>
-
+                <div class="embedding-arrow">↓</div>
 
                 <div class="embedding-step">
-
                     <div class="embedding-step-label">
                         Token ID
                     </div>
-
                     <code id="selectedTokenId">
                         ${firstToken?.token_id ?? ""}
                     </code>
-
                 </div>
 
-
-                <div class="embedding-arrow">
-                    ↓
-                </div>
-
+                <div class="embedding-arrow">↓</div>
 
                 <div class="embedding-step">
-
                     <div class="embedding-step-label">
                         Embedding matrix
                     </div>
 
                     <code>
-
                         ${embedding.matrix_shape[0].toLocaleString()}
                         ×
                         ${embedding.matrix_shape[1].toLocaleString()}
-
                     </code>
-
 
                     <div class="embedding-subtext">
                         vocabulary × embedding dimension
                     </div>
-
                 </div>
 
-
-                <div class="embedding-arrow">
-                    ↓
-                </div>
-
+                <div class="embedding-arrow">↓</div>
 
                 <div class="embedding-step">
-
                     <div class="embedding-step-label">
                         Selected row
                     </div>
@@ -1303,140 +969,100 @@ function renderTokens(data) {
                     <code id="selectedEmbeddingRow">
                         ${firstToken?.embedding.row ?? ""}
                     </code>
-
                 </div>
 
-
-                <div class="embedding-arrow">
-                    ↓
-                </div>
-
+                <div class="embedding-arrow">↓</div>
 
                 <div class="embedding-vector">
-
                     <div class="embedding-step-label">
                         ${embedding.dimension}-dimensional vector
                     </div>
 
                     <code id="selectedEmbeddingPreview">
-
                         ${formatVector(
                             firstToken?.embedding.preview || []
                         )}
-
                     </code>
-
                 </div>
 
-
             </div>
-
         </div>
 
-
         <div class="tokenizer-note">
-
             The <code>Ġ</code> character shown by this tokenizer
             represents a preceding space. The decoded text shows
             the text contributed by the token.
-
         </div>
-
     `;
 
-
-    container.innerHTML =
-        html;
-
+    container.innerHTML = html;
 
     window.currentTokens =
         data.tokens;
 
-
     if (data.tokens.length > 0) {
-
         selectToken(0);
-
     }
-
 }
 
 
-/* ---------------------------------------------------------
+/* =========================================================
    Token selection
-   --------------------------------------------------------- */
+   ========================================================= */
 
 function selectToken(position) {
 
     const token =
         window.currentTokens?.[position];
 
-
     if (!token) {
         return;
     }
 
-
     document
         .querySelectorAll(".token-row")
         .forEach(row => {
-
             row.classList.remove("selected");
-
         });
-
 
     const row =
         document.querySelector(
             `.token-row[data-position="${position}"]`
         );
 
-
     if (row) {
-
         row.classList.add("selected");
-
     }
 
-
     document.getElementById("selectedToken")
-        .textContent =
-            token.token;
-
+        .textContent = token.token;
 
     document.getElementById("selectedTokenId")
-        .textContent =
-            token.token_id;
-
+        .textContent = token.token_id;
 
     document.getElementById("selectedEmbeddingRow")
-        .textContent =
-            token.embedding.row;
-
+        .textContent = token.embedding.row;
 
     document.getElementById("selectedEmbeddingPreview")
         .textContent =
             formatVector(
                 token.embedding.preview
             );
-
 }
 
 
-/* ---------------------------------------------------------
+/* =========================================================
    Pipeline
-   --------------------------------------------------------- */
+   ========================================================= */
 
 function renderPipeline(data) {
 
     document.getElementById("pipelineCard")
         .style.display = "block";
 
-
     document.getElementById("tokenShape")
         .textContent =
             `[${data.tokens.length}]`;
-
 
     document.getElementById("embeddingShape")
         .textContent =
@@ -1444,38 +1070,32 @@ function renderPipeline(data) {
                 data.embedding.sequence_shape
             );
 
-
     document.getElementById("logitsShape")
         .textContent =
             formatShape(
                 data.logits.shape
             );
-
 }
 
 
-/* ---------------------------------------------------------
-   Execution Trace
-   --------------------------------------------------------- */
+/* =========================================================
+   Transformer execution trace
+   ========================================================= */
 
 function renderExecutionTrace(data) {
 
     document.getElementById("executionCard")
         .style.display = "block";
 
-
     const container =
         document.getElementById("layers");
 
-
     container.innerHTML = "";
-
 
     const grouped =
         groupTraceByLayer(
             data.execution_trace
         );
-
 
     for (
         let layerIndex = 0;
@@ -1486,314 +1106,632 @@ function renderExecutionTrace(data) {
         const entries =
             grouped[layerIndex] || [];
 
-
         const layer =
             document.createElement("div");
 
-
-        layer.className =
-            "layer";
-
+        layer.className = "layer";
 
         const header =
             document.createElement("button");
 
-
         header.className =
             "layer-header";
 
-
         header.innerHTML = `
-
             <span class="layer-title">
                 Layer ${layerIndex}
             </span>
 
             <span class="layer-count">
-                ${entries.length} operations
+                ${entries.length} captured operations
             </span>
-
         `;
-
 
         const body =
             document.createElement("div");
 
-
         body.className =
             "layer-body";
 
-
         header.onclick = () => {
-
             layer.classList.toggle("open");
-
         };
 
-
-        for (const entry of entries) {
-
-            body.appendChild(
-                createTraceEntry(entry)
-            );
-
-        }
-
+        body.appendChild(
+            createTransformerGraph(
+                layerIndex,
+                entries
+            )
+        );
 
         layer.appendChild(header);
-
         layer.appendChild(body);
 
         container.appendChild(layer);
+    }
+}
+
+
+/* =========================================================
+   Transformer graph
+   ========================================================= */
+
+function createTransformerGraph(
+    layerIndex,
+    entries
+) {
+
+    const wrapper =
+        document.createElement("div");
+
+    const graph =
+        document.createElement("div");
+
+    graph.className =
+        "transformer-graph";
+
+    const map =
+        {};
+
+    for (const entry of entries) {
+        map[shortOperationName(entry.name)] =
+            entry;
+    }
+
+    /*
+     * Input
+     */
+
+    graph.appendChild(
+        createTraceNode(
+            map["input"],
+            "Input"
+        )
+    );
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    /*
+     * Input RMSNorm
+     */
+
+    graph.appendChild(
+        createTraceNode(
+            map["input_layernorm"],
+            "RMSNorm"
+        )
+    );
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    /*
+     * Q / K / V
+     */
+
+    const branches =
+        document.createElement("div");
+
+    branches.className =
+        "attention-branches";
+
+    for (
+        const [key, label] of [
+            ["q_proj", "Q Projection"],
+            ["k_proj", "K Projection"],
+            ["v_proj", "V Projection"]
+        ]
+    ) {
+
+        const branch =
+            document.createElement("div");
+
+        branch.className =
+            "branch";
+
+        const node =
+            createTraceNode(
+                map[key],
+                label
+            );
+
+        branch.appendChild(node);
+
+        branches.appendChild(branch);
+    }
+
+    graph.appendChild(branches);
+
+    graph.appendChild(
+        createConceptualNode(
+            "Attention",
+            "Q × K → softmax → V",
+            "Conceptual — attention internals are not separately captured yet"
+        )
+    );
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    /*
+     * O projection
+     */
+
+    graph.appendChild(
+        createTraceNode(
+            map["o_proj"],
+            "O Projection"
+        )
+    );
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    /*
+     * Residual
+     */
+
+    graph.appendChild(
+        createConceptualNode(
+            "Residual Add",
+            "attention output + layer input",
+            "Conceptual — residual addition is not separately captured"
+        )
+    );
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    /*
+     * Post attention RMSNorm
+     */
+
+    graph.appendChild(
+        createTraceNode(
+            map["post_attention_layernorm"],
+            "RMSNorm"
+        )
+    );
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    /*
+     * MLP gate / up
+     */
+
+    const mlpBranches =
+        document.createElement("div");
+
+    mlpBranches.className =
+        "attention-branches";
+
+    for (
+        const [key, label] of [
+            ["gate_proj", "Gate Projection"],
+            ["up_proj", "Up Projection"]
+        ]
+    ) {
+
+        const branch =
+            document.createElement("div");
+
+        branch.className =
+            "branch";
+
+        branch.appendChild(
+            createTraceNode(
+                map[key],
+                label
+            )
+        );
+
+        mlpBranches.appendChild(branch);
+    }
+
+    graph.appendChild(mlpBranches);
+
+    graph.appendChild(
+        createConceptualNode(
+            "SiLU × Gate",
+            "activation(gate) × up",
+            "Conceptual — activation/multiplication is not separately captured"
+        )
+    );
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    /*
+     * Down projection
+     */
+
+    graph.appendChild(
+        createTraceNode(
+            map["down_proj"],
+            "Down Projection"
+        )
+    );
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    /*
+     * Final residual
+     */
+
+    graph.appendChild(
+        createConceptualNode(
+            "Residual Add",
+            "MLP output + attention residual",
+            "Conceptual — residual addition is not separately captured"
+        )
+    );
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    graph.appendChild(
+        createConceptualNode(
+            `Layer ${layerIndex} output`,
+            entries[entries.length - 1]?.shape || [],
+            "Conceptual endpoint"
+        )
+    );
+
+    wrapper.appendChild(graph);
+
+    return wrapper;
+}
+
+
+/* =========================================================
+   Trace node
+   ========================================================= */
+
+function createTraceNode(
+    entry,
+    label
+) {
+
+    if (!entry) {
+
+        return createConceptualNode(
+            label,
+            "not captured",
+            "No tensor was recorded for this operation"
+        );
 
     }
 
-}
-
-
-/* ---------------------------------------------------------
-   Trace entry
-   --------------------------------------------------------- */
-
-function createTraceEntry(entry) {
-
-    const element =
+    const node =
         document.createElement("div");
 
+    node.className =
+        "graph-node";
 
-    element.className =
-        "trace-entry";
+    node.innerHTML = `
+        <div class="node-title">
+            ${escapeHtml(label)}
+        </div>
 
-
-    const header =
-        document.createElement("div");
-
-
-    header.className =
-        "trace-header";
-
-
-    const name =
-        document.createElement("div");
-
-
-    name.className =
-        "trace-name";
-
-
-    name.textContent =
-        cleanTraceName(entry.name);
-
-
-    const shape =
-        document.createElement("div");
-
-
-    shape.className =
-        "trace-shape";
-
-
-    shape.textContent =
-        formatShape(entry.shape);
-
-
-    header.appendChild(name);
-
-    header.appendChild(shape);
-
-
-    const details =
-        document.createElement("div");
-
-
-    details.className =
-        "trace-details";
-
-
-    const metadata =
-        document.createElement("div");
-
-
-    metadata.className =
-        "metadata";
-
-
-    metadata.innerHTML = `
-
-        <span>
-            dtype: ${escapeHtml(entry.dtype)}
-        </span>
-
-        <span>
-            device: ${escapeHtml(entry.device)}
-        </span>
-
+        <div class="node-subtitle">
+            ${formatShape(entry.shape)}
+        </div>
     `;
 
+    node.onclick = () => {
 
-    const previewTitle =
-        document.createElement("div");
+        document
+            .querySelectorAll(".graph-node.selected")
+            .forEach(item => {
+                item.classList.remove("selected");
+            });
 
+        node.classList.add("selected");
 
-    previewTitle.className =
-        "preview-title";
-
-
-    previewTitle.textContent =
-        "Tensor preview — first 16 values";
-
-
-    const preview =
-        document.createElement("div");
-
-
-    preview.className =
-        "preview";
-
-
-    preview.textContent =
-        JSON.stringify(
-            entry.preview,
-            null,
-            2
+        showTraceDetail(
+            node.closest(".layer-body"),
+            entry,
+            label
         );
-
-
-    details.appendChild(metadata);
-
-    details.appendChild(previewTitle);
-
-    details.appendChild(preview);
-
-
-    header.onclick = () => {
-
-        element.classList.toggle("open");
-
     };
 
-
-    element.appendChild(header);
-
-    element.appendChild(details);
-
-
-    return element;
-
+    return node;
 }
 
 
-/* ---------------------------------------------------------
+/* =========================================================
+   Conceptual node
+   ========================================================= */
+
+function createConceptualNode(
+    title,
+    subtitle,
+    description
+) {
+
+    const node =
+        document.createElement("div");
+
+    node.className =
+        "graph-node conceptual";
+
+    node.title =
+        description;
+
+    node.innerHTML = `
+        <div class="node-title">
+            ${escapeHtml(title)}
+        </div>
+
+        <div class="node-subtitle">
+            ${escapeHtml(
+                Array.isArray(subtitle)
+                    ? formatShape(subtitle)
+                    : String(subtitle)
+            )}
+        </div>
+    `;
+
+    return node;
+}
+
+
+/* =========================================================
+   Arrow
+   ========================================================= */
+
+function createArrow() {
+
+    const arrow =
+        document.createElement("div");
+
+    arrow.className =
+        "node-arrow";
+
+    arrow.textContent =
+        "↓";
+
+    return arrow;
+}
+
+
+/* =========================================================
+   Trace detail panel
+   ========================================================= */
+
+function showTraceDetail(
+    layerBody,
+    entry,
+    label
+) {
+
+    let detail =
+        layerBody.querySelector(".trace-detail");
+
+    if (!detail) {
+
+        detail =
+            document.createElement("div");
+
+        detail.className =
+            "trace-detail";
+
+        layerBody.appendChild(detail);
+    }
+
+    detail.innerHTML = `
+        <div class="trace-detail-header">
+
+            <div>
+                <div class="trace-detail-title">
+                    ${escapeHtml(label)}
+                </div>
+
+                <div class="status">
+                    ${escapeHtml(entry.name)}
+                </div>
+            </div>
+
+            <div class="trace-detail-shape">
+                ${formatShape(entry.shape)}
+            </div>
+
+        </div>
+
+        <div class="metadata">
+
+            <span>
+                dtype: ${escapeHtml(entry.dtype)}
+            </span>
+
+            <span>
+                device: ${escapeHtml(entry.device)}
+            </span>
+
+        </div>
+
+        <div class="preview-title">
+            Tensor preview — first 16 values
+        </div>
+
+        <div class="preview">
+            ${escapeHtml(
+                JSON.stringify(
+                    entry.preview,
+                    null,
+                    2
+                )
+            )}
+        </div>
+    `;
+
+    detail.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest"
+    });
+}
+
+
+/* =========================================================
+   Group trace by layer
+   ========================================================= */
+
+function groupTraceByLayer(trace) {
+
+    const grouped = {};
+
+    for (const entry of trace) {
+
+        const match =
+            entry.name.match(
+                /^layer_(\d+)\./
+            );
+
+        if (!match) {
+            continue;
+        }
+
+        const layerIndex =
+            Number(match[1]);
+
+        if (!grouped[layerIndex]) {
+            grouped[layerIndex] = [];
+        }
+
+        grouped[layerIndex].push(entry);
+    }
+
+    return grouped;
+}
+
+
+/* =========================================================
+   Convert full operation name to short key
+   ========================================================= */
+
+function shortOperationName(name) {
+
+    const match =
+        name.match(
+            /^layer_\d+\.(.+)$/
+        );
+
+    if (!match) {
+        return name;
+    }
+
+    const operation =
+        match[1];
+
+    return operation
+        .replace(
+            "attention.",
+            ""
+        )
+        .replace(
+            "mlp.",
+            ""
+        );
+}
+
+
+/* =========================================================
    Probabilities
-   --------------------------------------------------------- */
+   ========================================================= */
 
 function renderProbabilities(data) {
 
     document.getElementById("probabilityCard")
         .style.display = "block";
 
-
     const container =
         document.getElementById("probabilities");
 
-
     container.innerHTML = "";
-
 
     for (const item of data.next_tokens) {
 
         const row =
             document.createElement("div");
 
-
         row.className =
             "probability";
-
 
         const token =
             document.createElement("div");
 
-
         token.className =
             "probability-label";
-
 
         token.textContent =
             item.token;
 
-
         const bar =
             document.createElement("div");
-
 
         bar.className =
             "probability-bar";
 
-
         const fill =
             document.createElement("div");
-
 
         fill.className =
             "probability-fill";
 
-
         fill.style.width =
             `${item.probability * 100}%`;
 
-
         bar.appendChild(fill);
-
 
         const probability =
             document.createElement("div");
 
-
         probability.className =
             "probability-value";
-
 
         probability.textContent =
             `${(
                 item.probability * 100
             ).toFixed(2)}%`;
 
-
         row.appendChild(token);
-
         row.appendChild(bar);
-
         row.appendChild(probability);
 
-
         container.appendChild(row);
-
     }
-
 }
 
 
-/* ---------------------------------------------------------
+/* =========================================================
    Generation
-   --------------------------------------------------------- */
+   ========================================================= */
 
 async function renderGeneration(prompt) {
 
     const card =
         document.getElementById("generationCard");
 
-
     const container =
         document.getElementById("generatedText");
-
 
     card.style.display =
         "block";
 
-
     container.textContent =
         "Generating response...";
-
 
     const response =
         await fetch("/generate", {
@@ -1805,97 +1743,37 @@ async function renderGeneration(prompt) {
             },
 
             body: JSON.stringify({
-
                 prompt: prompt,
-
                 max_new_tokens: 32
-
             })
-
         });
-
 
     if (!response.ok) {
 
         throw new Error(
             `Generation request failed: ${response.status}`
         );
-
     }
-
 
     const data =
         await response.json();
 
-
     container.textContent =
         data.generated_text;
-
 }
 
 
-/* ---------------------------------------------------------
+/* =========================================================
    Helpers
-   --------------------------------------------------------- */
-
-function groupTraceByLayer(trace) {
-
-    const grouped = {};
-
-
-    for (const entry of trace) {
-
-        const match =
-            entry.name.match(
-                /^layer_(\d+)\./
-            );
-
-
-        if (!match) {
-            continue;
-        }
-
-
-        const layerIndex =
-            Number(match[1]);
-
-
-        if (!grouped[layerIndex]) {
-
-            grouped[layerIndex] = [];
-
-        }
-
-
-        grouped[layerIndex].push(entry);
-
-    }
-
-
-    return grouped;
-
-}
-
-
-function cleanTraceName(name) {
-
-    return name
-        .replace(
-            /^layer_\d+\./,
-            ""
-        )
-        .replaceAll(
-            ".",
-            " → "
-        );
-
-}
-
+   ========================================================= */
 
 function formatShape(shape) {
 
-    return `[${shape.join(" × ")}]`;
+    if (!Array.isArray(shape)) {
+        return String(shape);
+    }
 
+    return `[${shape.join(" × ")}]`;
 }
 
 
@@ -1909,38 +1787,21 @@ function formatVector(values) {
             )
             .join(", ")
     } ... ]`;
-
 }
 
 
 function escapeHtml(value) {
 
     return String(value)
-        .replaceAll(
-            "&",
-            "&amp;"
-        )
-        .replaceAll(
-            "<",
-            "&lt;"
-        )
-        .replaceAll(
-            ">",
-            "&gt;"
-        )
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-        .replaceAll(
-            "'",
-            "&#039;"
-        );
-
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 }
-
 
 </script>
 
 </body>
 </html>
+

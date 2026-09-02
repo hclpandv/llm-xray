@@ -22,13 +22,10 @@ class TransformerTracer:
             .cpu()
             .tolist()
         )
-
         return values[:16]
 
     def _record(self, name):
-
         def hook(module, inputs, outputs):
-
             tensor = outputs
 
             if isinstance(outputs, tuple):
@@ -49,11 +46,38 @@ class TransformerTracer:
 
         return hook
 
+    def _record_input(self, name):
+        def hook(module, inputs):
+            if not inputs:
+                return
+
+            tensor = inputs[0]
+
+            if not isinstance(tensor, torch.Tensor):
+                return
+
+            self.trace.append(
+                {
+                    "name": name,
+                    "shape": list(tensor.shape),
+                    "dtype": str(tensor.dtype),
+                    "device": str(tensor.device),
+                    "preview": self._preview(tensor),
+                }
+            )
+
+        return hook
+
     def register(self):
-
         for layer_index, layer in enumerate(self.model.model.layers):
-
             prefix = f"layer_{layer_index}"
+
+            # Capture the actual tensor entering the decoder layer.
+            self.handles.append(
+                layer.register_forward_pre_hook(
+                    self._record_input(f"{prefix}.input")
+                )
+            )
 
             self.handles.append(
                 layer.input_layernorm.register_forward_hook(
@@ -113,7 +137,6 @@ class TransformerTracer:
         return self.trace
 
     def remove(self):
-
         for handle in self.handles:
             handle.remove()
 
