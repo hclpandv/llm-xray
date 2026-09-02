@@ -637,19 +637,15 @@
             <div class="arrow">↓</div>
 
             <div class="pipeline-box">
-                <div class="pipeline-name">32 Transformer Layers</div>
-                <div class="pipeline-shape">
-                    Hidden size: 960
-                </div>
+                <div id="layerPipelineName" class="pipeline-name"></div>
+                <div id="layerPipelineShape" class="pipeline-shape"></div>
             </div>
 
             <div class="arrow">↓</div>
 
             <div class="pipeline-box">
                 <div class="pipeline-name">Final RMSNorm</div>
-                <div class="pipeline-shape">
-                    [1 × 960]
-                </div>
+                <div id="finalHiddenShape" class="pipeline-shape"></div>
             </div>
 
             <div class="arrow">↓</div>
@@ -663,9 +659,7 @@
 
             <div class="pipeline-box">
                 <div class="pipeline-name">Softmax</div>
-                <div class="pipeline-shape">
-                    49,152 probabilities
-                </div>
+                <div id="softmaxShape" class="pipeline-shape"></div>
             </div>
 
         </div>
@@ -1070,11 +1064,29 @@ function renderPipeline(data) {
                 data.embedding.sequence_shape
             );
 
+    document.getElementById("layerPipelineName")
+        .textContent =
+            `${data.model.layers} Transformer Layers`;
+
+    document.getElementById("layerPipelineShape")
+        .textContent =
+            `Hidden size: ${data.model.hidden_size}`;
+
+    document.getElementById("finalHiddenShape")
+        .textContent =
+            formatShape(
+                data.final_hidden_state.shape
+            );
+
     document.getElementById("logitsShape")
         .textContent =
             formatShape(
                 data.logits.shape
             );
+
+    document.getElementById("softmaxShape")
+        .textContent =
+            `${data.model.vocab_size.toLocaleString()} probabilities`;
 }
 
 
