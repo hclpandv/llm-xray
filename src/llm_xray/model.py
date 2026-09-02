@@ -36,8 +36,8 @@ class ModelManager:
 
         self.model.to(self.device)
         self.model.eval()
-        #self.tracer = TransformerTracer(self.model)
-        #self.tracer.register()
+        self.tracer = TransformerTracer(self.model)
+        self.tracer.register()
 
         print("Model loaded.")
 
@@ -134,11 +134,14 @@ class ModelManager:
         # Run the actual Transformer
         # ---------------------------------------------------------
 
+        self.tracer.clear()
+
         outputs = self.model(
             **encoded,
             output_hidden_states=True,
         )
 
+        trace = self.tracer.get_trace()
         logits = outputs.logits
 
         # Final hidden representation for the last input token.
@@ -310,6 +313,8 @@ class ModelManager:
             },
 
             "layers": layers,
+
+            "execution_trace": trace,
 
             "final_hidden_state": {
                 "name": "final_hidden_state",
