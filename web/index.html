@@ -406,6 +406,7 @@
         <div class="model-header">
 
             <div>
+                <div class="status">Model</div>
 
                 <div id="modelName" class="model-name"></div>
 
@@ -512,7 +513,7 @@
         <h2>3. Transformer Execution Trace</h2>
 
         <div class="status">
-            These values were captured from the actual forward pass.
+            These tensors were captured from the model's actual forward pass.
             Expand a layer to inspect its intermediate tensors.
         </div>
 
@@ -589,8 +590,7 @@ async function inspectModel() {
 
 
         status.textContent =
-            `Inspection complete — captured ${data.execution_trace.length} runtime operations.`;
-
+           `Inspection complete — captured ${data.execution_trace.length} operations during the model's forward pass.`;
 
     } catch (error) {
 
