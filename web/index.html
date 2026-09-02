@@ -13,58 +13,90 @@
 
         body {
             margin: 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-                         sans-serif;
-            background: #0b0f14;
-            color: #e6edf3;
+            font-family:
+                -apple-system,
+                BlinkMacSystemFont,
+                "Segoe UI",
+                sans-serif;
+
+            background: #0f1117;
+            color: #e6e8ef;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 24px 80px;
         }
 
         header {
-            padding: 24px 32px;
-            border-bottom: 1px solid #252c35;
+            margin-bottom: 32px;
         }
 
-        header h1 {
-            margin: 0;
-            font-size: 28px;
+        h1 {
+            margin: 0 0 8px;
+            font-size: 34px;
         }
 
-        header p {
-            margin: 6px 0 0;
-            color: #8b949e;
+        .subtitle {
+            color: #8d93a5;
+            font-size: 15px;
         }
 
-        main {
-            max-width: 1400px;
-            margin: auto;
-            padding: 28px;
+        .card {
+            background: #171a23;
+            border: 1px solid #292e3b;
+            border-radius: 14px;
+            padding: 24px;
+            margin-bottom: 20px;
+        }
+
+        .card h2 {
+            margin-top: 0;
+            font-size: 20px;
         }
 
         textarea {
             width: 100%;
-            min-height: 90px;
+            min-height: 100px;
             resize: vertical;
+
+            background: #0f1117;
+            color: #e6e8ef;
+
+            border: 1px solid #303645;
+            border-radius: 10px;
+
             padding: 14px;
-            border-radius: 8px;
-            border: 1px solid #30363d;
-            background: #161b22;
-            color: #e6edf3;
-            font-size: 16px;
+            font-size: 15px;
+            font-family: inherit;
+
+            outline: none;
+        }
+
+        textarea:focus {
+            border-color: #6978ff;
         }
 
         button {
-            margin-top: 12px;
-            padding: 10px 20px;
-            border: 0;
-            border-radius: 7px;
-            background: #238636;
+            margin-top: 14px;
+
+            background: #6675f5;
             color: white;
-            font-size: 15px;
+
+            border: 0;
+            border-radius: 9px;
+
+            padding: 11px 18px;
+
+            font-size: 14px;
+            font-weight: 600;
+
             cursor: pointer;
         }
 
         button:hover {
-            background: #2ea043;
+            opacity: 0.9;
         }
 
         button:disabled {
@@ -72,173 +104,289 @@
             cursor: wait;
         }
 
-        section {
-            margin-top: 28px;
+        .status {
+            margin-top: 12px;
+            color: #8d93a5;
+            font-size: 14px;
         }
 
-        .section-title {
+        .model-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 20px;
+        }
+
+        .model-name {
             font-size: 18px;
             font-weight: 600;
-            margin-bottom: 12px;
+        }
+
+        .model-stats {
+            margin-top: 6px;
+            color: #8d93a5;
+            font-size: 14px;
         }
 
         .tokens {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
+            margin-top: 16px;
         }
 
         .token {
-            padding: 10px 12px;
+            background: #222735;
+            border: 1px solid #343a4b;
             border-radius: 8px;
-            border: 1px solid #30363d;
-            background: #161b22;
-            cursor: pointer;
+            padding: 8px 10px;
         }
 
-        .token:hover {
-            border-color: #58a6ff;
-        }
-
-        .token-text {
+        .token-value {
             font-family: monospace;
-            font-size: 15px;
+            font-size: 14px;
         }
 
         .token-id {
-            display: block;
-            margin-top: 4px;
-            color: #8b949e;
-            font-size: 12px;
+            color: #7f879a;
+            font-size: 11px;
+            margin-top: 3px;
         }
 
         .pipeline {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 10px;
+            gap: 0;
+            margin-top: 20px;
         }
 
-        .node {
-            width: min(700px, 100%);
-            padding: 16px;
-            border: 1px solid #30363d;
-            border-radius: 10px;
-            background: #161b22;
-        }
-
-        .node-header {
+        .pipeline-step {
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            gap: 14px;
         }
 
-        .node-name {
+        .pipeline-box {
+            width: 100%;
+            background: #202430;
+            border: 1px solid #303645;
+            border-radius: 9px;
+            padding: 13px 15px;
+        }
+
+        .pipeline-name {
             font-weight: 600;
         }
 
-        .shape {
-            color: #8b949e;
+        .pipeline-shape {
+            color: #8d93a5;
             font-family: monospace;
-            font-size: 13px;
+            font-size: 12px;
+            margin-top: 3px;
         }
 
         .arrow {
-            color: #58a6ff;
-            font-size: 24px;
+            color: #646b7e;
+            text-align: center;
+            padding: 5px;
         }
 
+        /* Execution trace */
+
         .layers {
-            width: min(700px, 100%);
+            margin-top: 20px;
         }
 
         .layer {
-            margin-bottom: 8px;
-            border: 1px solid #30363d;
-            border-radius: 8px;
-            background: #161b22;
+            border: 1px solid #2b303d;
+            border-radius: 10px;
+            margin-bottom: 10px;
             overflow: hidden;
+            background: #13161e;
         }
 
         .layer-header {
-            padding: 14px;
+            width: 100%;
+            margin: 0;
+            padding: 15px 17px;
+
+            background: #1c202b;
+            color: #e6e8ef;
+
+            border: 0;
+            border-radius: 0;
+
             display: flex;
             justify-content: space-between;
+            align-items: center;
+
             cursor: pointer;
+            text-align: left;
         }
 
         .layer-header:hover {
-            background: #1c2128;
+            background: #222735;
         }
 
-        .layer-details {
+        .layer-title {
+            font-weight: 600;
+        }
+
+        .layer-count {
+            color: #858ca0;
+            font-size: 12px;
+        }
+
+        .layer-body {
             display: none;
             padding: 14px;
-            border-top: 1px solid #30363d;
-            color: #8b949e;
+        }
+
+        .layer.open .layer-body {
+            display: block;
+        }
+
+        .trace-entry {
+            background: #191d27;
+            border: 1px solid #292e3a;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            overflow: hidden;
+        }
+
+        .trace-header {
+            padding: 11px 13px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .trace-header:hover {
+            background: #202430;
+        }
+
+        .trace-name {
             font-family: monospace;
             font-size: 13px;
         }
 
-        .layer.open .layer-details {
+        .trace-shape {
+            color: #858ca0;
+            font-family: monospace;
+            font-size: 11px;
+            white-space: nowrap;
+        }
+
+        .trace-details {
+            display: none;
+            padding: 12px 13px;
+            border-top: 1px solid #292e3a;
+            background: #11141b;
+        }
+
+        .trace-entry.open .trace-details {
             display: block;
         }
 
-        .predictions {
-            width: min(700px, 100%);
+        .metadata {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+
+            color: #858ca0;
+            font-size: 12px;
+
+            margin-bottom: 12px;
         }
 
-        .prediction {
-            display: grid;
-            grid-template-columns: 100px 1fr 70px;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 8px;
+        .preview-title {
+            color: #858ca0;
+            font-size: 11px;
+            margin-bottom: 6px;
         }
 
-        .prediction-token {
+        .preview {
+            background: #0b0d12;
+            border: 1px solid #252a35;
+            border-radius: 7px;
+
+            padding: 10px;
+
             font-family: monospace;
+            font-size: 11px;
+
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-word;
         }
 
-        .bar-container {
-            height: 18px;
-            background: #161b22;
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .bar {
-            height: 100%;
-            background: #58a6ff;
+        .probabilities {
+            display: grid;
+            gap: 10px;
+            margin-top: 18px;
         }
 
         .probability {
-            text-align: right;
+            display: grid;
+            grid-template-columns: 90px 1fr 70px;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .probability-label {
             font-family: monospace;
+            font-size: 13px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
-        .status {
-            margin-top: 10px;
-            color: #8b949e;
+        .probability-bar {
+            height: 8px;
+            background: #252a35;
+            border-radius: 999px;
+            overflow: hidden;
         }
 
-        .hidden {
-            display: none;
+        .probability-fill {
+            height: 100%;
+            background: #6675f5;
+            border-radius: 999px;
+            transition: width 0.4s ease;
+        }
+
+        .probability-value {
+            text-align: right;
+            color: #9da5ff;
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .empty {
+            color: #858ca0;
+            font-size: 14px;
         }
     </style>
 </head>
 
 <body>
 
-<header>
-    <h1>LLM-Xray</h1>
-    <p>Interactive X-ray of a local Hugging Face language model.</p>
-</header>
+<div class="container">
 
-<main>
+    <header>
+        <h1>LLM-Xray</h1>
+        <div class="subtitle">
+            Interactive X-ray of a local Hugging Face language model.
+        </div>
+    </header>
 
-    <section>
-        <div class="section-title">Prompt</div>
+
+    <!-- Prompt -->
+
+    <section class="card">
+
+        <h2>Prompt</h2>
 
         <textarea id="prompt">The capital of France is</textarea>
 
@@ -247,77 +395,108 @@
         </button>
 
         <div id="status" class="status"></div>
-    </section>
-
-
-    <section id="modelSection" class="hidden">
-
-        <div class="section-title">Model</div>
-
-        <div id="modelInfo" class="node"></div>
 
     </section>
 
 
-    <section id="tokenSection" class="hidden">
+    <!-- Model -->
 
-        <div class="section-title">1. Tokenization</div>
+    <section id="modelCard" class="card" style="display:none">
+
+        <div class="model-header">
+
+            <div>
+
+                <div id="modelName" class="model-name"></div>
+
+                <div id="modelStats" class="model-stats"></div>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- Tokens -->
+
+    <section id="tokenCard" class="card" style="display:none">
+
+        <h2>1. Tokenization</h2>
 
         <div id="tokens" class="tokens"></div>
 
+        <div class="status">
+            Tokens such as <code>Ġcapital</code> use <code>Ġ</code> to represent
+            a preceding space in this tokenizer's vocabulary.
+        </div>
+
     </section>
 
 
-    <section id="pipelineSection" class="hidden">
+    <!-- Pipeline -->
 
-        <div class="section-title">2. Transformer Pipeline</div>
+    <section id="pipelineCard" class="card" style="display:none">
+
+        <h2>2. Transformer Pipeline</h2>
 
         <div class="pipeline">
 
-            <div class="node">
-                <div class="node-header">
-                    <span class="node-name">Token IDs</span>
-                    <span id="tokenShape" class="shape"></span>
+            <div class="pipeline-step">
+                <div class="pipeline-box">
+                    <div class="pipeline-name">Token IDs</div>
+                    <div id="tokenShape" class="pipeline-shape"></div>
                 </div>
             </div>
 
             <div class="arrow">↓</div>
 
-            <div class="node">
-                <div class="node-header">
-                    <span class="node-name">Token Embeddings</span>
-                    <span id="embeddingShape" class="shape"></span>
+            <div class="pipeline-step">
+                <div class="pipeline-box">
+                    <div class="pipeline-name">Token Embeddings</div>
+                    <div id="embeddingShape" class="pipeline-shape"></div>
                 </div>
             </div>
 
             <div class="arrow">↓</div>
 
-            <div id="layers" class="layers"></div>
-
-            <div class="arrow">↓</div>
-
-            <div class="node">
-                <div class="node-header">
-                    <span class="node-name">Final RMSNorm</span>
-                    <span id="hiddenShape" class="shape"></span>
+            <div class="pipeline-step">
+                <div class="pipeline-box">
+                    <div class="pipeline-name">32 Transformer Layers</div>
+                    <div class="pipeline-shape">
+                        Hidden size: 960
+                    </div>
                 </div>
             </div>
 
             <div class="arrow">↓</div>
 
-            <div class="node">
-                <div class="node-header">
-                    <span class="node-name">LM Head</span>
-                    <span id="logitsShape" class="shape"></span>
+            <div class="pipeline-step">
+                <div class="pipeline-box">
+                    <div class="pipeline-name">Final RMSNorm</div>
+                    <div class="pipeline-shape">
+                        [1 × 960]
+                    </div>
                 </div>
             </div>
 
             <div class="arrow">↓</div>
 
-            <div class="node">
-                <div class="node-header">
-                    <span class="node-name">Softmax</span>
-                    <span class="shape">49,152 probabilities</span>
+            <div class="pipeline-step">
+                <div class="pipeline-box">
+                    <div class="pipeline-name">LM Head</div>
+                    <div id="logitsShape" class="pipeline-shape"></div>
+                </div>
+            </div>
+
+            <div class="arrow">↓</div>
+
+            <div class="pipeline-step">
+                <div class="pipeline-box">
+                    <div class="pipeline-name">Softmax</div>
+                    <div class="pipeline-shape">
+                        49,152 probabilities
+                    </div>
                 </div>
             </div>
 
@@ -326,15 +505,33 @@
     </section>
 
 
-    <section id="predictionSection" class="hidden">
+    <!-- Execution -->
 
-        <div class="section-title">3. Next Token Probabilities</div>
+    <section id="executionCard" class="card" style="display:none">
 
-        <div id="predictions" class="predictions"></div>
+        <h2>3. Transformer Execution Trace</h2>
+
+        <div class="status">
+            These values were captured from the actual forward pass.
+            Expand a layer to inspect its intermediate tensors.
+        </div>
+
+        <div id="layers" class="layers"></div>
 
     </section>
 
-</main>
+
+    <!-- Next token -->
+
+    <section id="probabilityCard" class="card" style="display:none">
+
+        <h2>4. Next Token Probabilities</h2>
+
+        <div id="probabilities" class="probabilities"></div>
+
+    </section>
+
+</div>
 
 
 <script>
@@ -351,11 +548,15 @@ async function inspectModel() {
         document.getElementById("status");
 
     button.disabled = true;
-    status.textContent = "Running model...";
+
+    status.textContent =
+        "Running the model and capturing execution trace...";
+
 
     try {
 
         const response = await fetch("/inspect", {
+
             method: "POST",
 
             headers: {
@@ -363,75 +564,86 @@ async function inspectModel() {
             },
 
             body: JSON.stringify({
-                prompt: prompt,
-                max_new_tokens: 32
+                prompt: prompt
             })
+
         });
+
 
         if (!response.ok) {
             throw new Error(
-                `Server returned ${response.status}`
+                `Request failed: ${response.status}`
             );
         }
 
-        const data = await response.json();
+
+        const data =
+            await response.json();
+
 
         renderModel(data);
         renderTokens(data);
         renderPipeline(data);
-        renderPredictions(data);
+        renderExecutionTrace(data);
+        renderProbabilities(data);
 
-        status.textContent = "Inspection complete.";
+
+        status.textContent =
+            `Inspection complete — captured ${data.execution_trace.length} runtime operations.`;
+
 
     } catch (error) {
 
         console.error(error);
 
         status.textContent =
-            "Error: " + error.message;
+            `Error: ${error.message}`;
 
     } finally {
 
         button.disabled = false;
 
     }
+
 }
 
+
+/* ---------------------------------------------------------
+   Model
+--------------------------------------------------------- */
 
 function renderModel(data) {
 
-    document
-        .getElementById("modelSection")
-        .classList.remove("hidden");
+    document.getElementById("modelCard")
+        .style.display = "block";
 
-    const model = data.model;
+    document.getElementById("modelName")
+        .textContent = data.model.name;
 
-    document.getElementById("modelInfo").innerHTML = `
-        <div class="node-header">
-            <span class="node-name">${model.name}</span>
-        </div>
-
-        <div style="margin-top:10px; color:#8b949e">
-            ${model.layers} Transformer layers ·
-            ${model.hidden_size} hidden dimensions ·
-            ${model.vocab_size.toLocaleString()} vocabulary tokens
-        </div>
-    `;
+    document.getElementById("modelStats")
+        .textContent =
+            `${data.model.layers} Transformer layers · ` +
+            `${data.model.hidden_size} hidden dimensions · ` +
+            `${data.model.vocab_size.toLocaleString()} vocabulary tokens`;
 }
 
 
+/* ---------------------------------------------------------
+   Tokens
+--------------------------------------------------------- */
+
 function renderTokens(data) {
 
-    document
-        .getElementById("tokenSection")
-        .classList.remove("hidden");
+    document.getElementById("tokenCard")
+        .style.display = "block";
 
     const container =
         document.getElementById("tokens");
 
     container.innerHTML = "";
 
-    data.tokens.forEach(token => {
+
+    for (const token of data.tokens) {
 
         const element =
             document.createElement("div");
@@ -439,132 +651,328 @@ function renderTokens(data) {
         element.className = "token";
 
         element.innerHTML = `
-            <span class="token-text">
+            <div class="token-value">
                 ${escapeHtml(token.token)}
-            </span>
+            </div>
 
-            <span class="token-id">
+            <div class="token-id">
                 ID ${token.token_id}
-            </span>
+            </div>
         `;
 
         container.appendChild(element);
-
-    });
+    }
 }
 
 
+/* ---------------------------------------------------------
+   Pipeline
+--------------------------------------------------------- */
+
 function renderPipeline(data) {
 
-    document
-        .getElementById("pipelineSection")
-        .classList.remove("hidden");
+    document.getElementById("pipelineCard")
+        .style.display = "block";
 
-    document.getElementById("tokenShape").textContent =
-        `[${data.tokens.length}]`;
+    document.getElementById("tokenShape")
+        .textContent =
+            `[${data.tokens.length}]`;
 
-    document.getElementById("embeddingShape").textContent =
-        formatShape(data.embedding.shape);
+    document.getElementById("embeddingShape")
+        .textContent =
+            formatShape(data.embedding.shape);
 
-    document.getElementById("hiddenShape").textContent =
-        formatShape(data.final_hidden_state.shape);
+    document.getElementById("logitsShape")
+        .textContent =
+            formatShape(data.logits.shape);
+}
 
-    document.getElementById("logitsShape").textContent =
-        formatShape(data.logits.shape);
 
-    const layers =
+/* ---------------------------------------------------------
+   Execution Trace
+--------------------------------------------------------- */
+
+function renderExecutionTrace(data) {
+
+    document.getElementById("executionCard")
+        .style.display = "block";
+
+    const container =
         document.getElementById("layers");
 
-    layers.innerHTML = "";
+    container.innerHTML = "";
 
-    for (let i = 0; i < data.model.layers; i++) {
+
+    const grouped =
+        groupTraceByLayer(data.execution_trace);
+
+
+    for (let layerIndex = 0;
+         layerIndex < data.model.layers;
+         layerIndex++) {
+
+        const entries =
+            grouped[layerIndex] || [];
+
 
         const layer =
             document.createElement("div");
 
         layer.className = "layer";
 
-        layer.innerHTML = `
-            <div class="layer-header"
-                 onclick="this.parentElement.classList.toggle('open')">
 
-                <span>Transformer Layer ${i}</span>
+        const header =
+            document.createElement("button");
 
-                <span class="shape">
-                    960 → 960
-                </span>
+        header.className = "layer-header";
 
-            </div>
+        header.innerHTML = `
+            <span class="layer-title">
+                Layer ${layerIndex}
+            </span>
 
-            <div class="layer-details">
-                RMSNorm<br>
-                ↓<br>
-                Q / K / V projections<br>
-                ↓<br>
-                Attention<br>
-                ↓<br>
-                O projection<br>
-                ↓<br>
-                Residual connection<br>
-                ↓<br>
-                RMSNorm<br>
-                ↓<br>
-                MLP<br>
-                ↓<br>
-                Residual connection
-            </div>
+            <span class="layer-count">
+                ${entries.length} operations
+            </span>
         `;
 
-        layers.appendChild(layer);
+
+        const body =
+            document.createElement("div");
+
+        body.className = "layer-body";
+
+
+        header.onclick = () => {
+
+            layer.classList.toggle("open");
+
+        };
+
+
+        for (const entry of entries) {
+
+            body.appendChild(
+                createTraceEntry(entry)
+            );
+
+        }
+
+
+        layer.appendChild(header);
+        layer.appendChild(body);
+
+        container.appendChild(layer);
     }
 }
 
 
-function renderPredictions(data) {
+/* ---------------------------------------------------------
+   Trace entry
+--------------------------------------------------------- */
 
-    document
-        .getElementById("predictionSection")
-        .classList.remove("hidden");
+function createTraceEntry(entry) {
+
+    const element =
+        document.createElement("div");
+
+    element.className = "trace-entry";
+
+
+    const header =
+        document.createElement("div");
+
+    header.className = "trace-header";
+
+
+    const name =
+        document.createElement("div");
+
+    name.className = "trace-name";
+
+    name.textContent =
+        cleanTraceName(entry.name);
+
+
+    const shape =
+        document.createElement("div");
+
+    shape.className = "trace-shape";
+
+    shape.textContent =
+        formatShape(entry.shape);
+
+
+    header.appendChild(name);
+    header.appendChild(shape);
+
+
+    const details =
+        document.createElement("div");
+
+    details.className = "trace-details";
+
+
+    const metadata =
+        document.createElement("div");
+
+    metadata.className = "metadata";
+
+    metadata.innerHTML = `
+        <span>dtype: ${escapeHtml(entry.dtype)}</span>
+        <span>device: ${escapeHtml(entry.device)}</span>
+    `;
+
+
+    const previewTitle =
+        document.createElement("div");
+
+    previewTitle.className = "preview-title";
+
+    previewTitle.textContent =
+        "Tensor preview — first 16 values";
+
+
+    const preview =
+        document.createElement("div");
+
+    preview.className = "preview";
+
+    preview.textContent =
+        JSON.stringify(entry.preview, null, 2);
+
+
+    details.appendChild(metadata);
+    details.appendChild(previewTitle);
+    details.appendChild(preview);
+
+
+    header.onclick = () => {
+
+        element.classList.toggle("open");
+
+    };
+
+
+    element.appendChild(header);
+    element.appendChild(details);
+
+
+    return element;
+}
+
+
+/* ---------------------------------------------------------
+   Probabilities
+--------------------------------------------------------- */
+
+function renderProbabilities(data) {
+
+    document.getElementById("probabilityCard")
+        .style.display = "block";
 
     const container =
-        document.getElementById("predictions");
+        document.getElementById("probabilities");
 
     container.innerHTML = "";
 
-    data.next_tokens.forEach(item => {
+
+    for (const item of data.next_tokens) {
 
         const row =
             document.createElement("div");
 
-        row.className = "prediction";
+        row.className = "probability";
 
-        const percentage =
-            item.probability * 100;
 
-        row.innerHTML = `
-            <div class="prediction-token">
-                ${escapeHtml(item.token)}
-            </div>
+        const token =
+            document.createElement("div");
 
-            <div class="bar-container">
-                <div class="bar"
-                     style="width:${percentage}%">
-                </div>
-            </div>
+        token.className = "probability-label";
 
-            <div class="probability">
-                ${percentage.toFixed(2)}%
-            </div>
-        `;
+        token.textContent =
+            item.token;
+
+
+        const bar =
+            document.createElement("div");
+
+        bar.className = "probability-bar";
+
+
+        const fill =
+            document.createElement("div");
+
+        fill.className = "probability-fill";
+
+        fill.style.width =
+            `${item.probability * 100}%`;
+
+
+        bar.appendChild(fill);
+
+
+        const probability =
+            document.createElement("div");
+
+        probability.className =
+            "probability-value";
+
+        probability.textContent =
+            `${(item.probability * 100).toFixed(2)}%`;
+
+
+        row.appendChild(token);
+        row.appendChild(bar);
+        row.appendChild(probability);
 
         container.appendChild(row);
+    }
+}
 
-    });
+/* ---------------------------------------------------------
+   Helpers
+--------------------------------------------------------- */
+
+function groupTraceByLayer(trace) {
+
+    const grouped = {};
+
+    for (const entry of trace) {
+
+        const match =
+            entry.name.match(/^layer_(\d+)\./);
+
+        if (!match) {
+            continue;
+        }
+
+        const layerIndex =
+            Number(match[1]);
+
+
+        if (!grouped[layerIndex]) {
+            grouped[layerIndex] = [];
+        }
+
+        grouped[layerIndex].push(entry);
+    }
+
+    return grouped;
+}
+
+
+function cleanTraceName(name) {
+
+    return name
+        .replace(/^layer_\d+\./, "")
+        .replaceAll(".", " → ");
 }
 
 
 function formatShape(shape) {
-    return "[" + shape.join(" × ") + "]";
+
+    return `[${shape.join(" × ")}]`;
 }
 
 
