@@ -363,6 +363,18 @@
             font-variant-numeric: tabular-nums;
         }
 
+        .generated-text {
+            background: #0f1117;
+            border: 1px solid #303645;
+            border-radius: 10px;
+            padding: 16px;
+
+            font-size: 16px;
+            line-height: 1.6;
+
+            white-space: pre-wrap;
+        }
+
         .empty {
             color: #858ca0;
             font-size: 14px;
@@ -532,6 +544,16 @@
 
     </section>
 
+    <!-- Generation -->
+
+    <section id="generationCard" class="card" style="display:none">
+
+        <h2>5. Generation</h2>
+
+        <div id="generatedText" class="generated-text"></div>
+
+    </section>
+
 </div>
 
 
@@ -587,6 +609,7 @@ async function inspectModel() {
         renderPipeline(data);
         renderExecutionTrace(data);
         renderProbabilities(data);
+        await renderGeneration(prompt);
 
 
         status.textContent =
@@ -928,6 +951,55 @@ function renderProbabilities(data) {
 
         container.appendChild(row);
     }
+}
+
+/* ---------------------------------------------------------
+   Generation
+--------------------------------------------------------- */
+
+async function renderGeneration(prompt) {
+
+    const card =
+        document.getElementById("generationCard");
+
+    const container =
+        document.getElementById("generatedText");
+
+    card.style.display = "block";
+
+    container.textContent =
+        "Generating response...";
+
+
+    const response = await fetch("/generate", {
+
+        method: "POST",
+
+        headers: {
+            "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+            prompt: prompt,
+            max_new_tokens: 32
+        })
+
+    });
+
+
+    if (!response.ok) {
+        throw new Error(
+            `Generation request failed: ${response.status}`
+        );
+    }
+
+
+    const data =
+        await response.json();
+
+
+    container.textContent =
+        data.generated_text;
 }
 
 /* ---------------------------------------------------------
