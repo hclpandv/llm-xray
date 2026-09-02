@@ -1,4 +1,4 @@
-# LLM-Xray
+# LLM-Xray 🔬
 
 Interactive X-ray visualization and debugger for local Hugging Face language models.
 
