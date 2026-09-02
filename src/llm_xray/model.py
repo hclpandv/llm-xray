@@ -123,16 +123,13 @@ class ModelManager:
 
         input_ids = encoded["input_ids"]
 
-        # ---------------------------------------------------------
-        # Embedding
-        # ---------------------------------------------------------
-
         embedding_layer = self.model.get_input_embeddings()
-        embeddings = embedding_layer(input_ids)
 
-        # ---------------------------------------------------------
-        # Run the actual Transformer
-        # ---------------------------------------------------------
+        embedding_matrix_shape = list(
+            embedding_layer.weight.shape
+        )
+
+        embeddings = embedding_layer(input_ids)
 
         self.tracer.clear()
 
@@ -142,25 +139,68 @@ class ModelManager:
         )
 
         trace = self.tracer.get_trace()
+
         logits = outputs.logits
 
-        # Final hidden representation for the last input token.
         final_hidden_state = outputs.hidden_states[-1][:, -1, :]
-
-        # ---------------------------------------------------------
-        # Model metadata
-        # ---------------------------------------------------------
 
         config = self.model.config
 
-        # ---------------------------------------------------------
-        # Describe the Transformer architecture
-        # ---------------------------------------------------------
+        tokenizer_class = type(self.tokenizer).__name__
+
+        tokenizer_model_type = None
+
+        try:
+            tokenizer_model_type = (
+                self.tokenizer.backend_tokenizer.model.__class__.__name__
+            )
+        except AttributeError:
+            pass
+
+        tokenizer_vocab_size = len(self.tokenizer)
+
+        input_tokens = self.tokenizer.convert_ids_to_tokens(
+            input_ids[0]
+        )
+
+        embedding_vectors = (
+            embeddings[0]
+            .detach()
+            .float()
+            .cpu()
+        )
+
+        tokens = []
+
+        for position, (token, token_id) in enumerate(
+            zip(input_tokens, input_ids[0].tolist())
+        ):
+            decoded = self.tokenizer.decode(
+                [token_id],
+                skip_special_tokens=False,
+            )
+
+            vector = embedding_vectors[position]
+
+            tokens.append(
+                {
+                    "position": position,
+                    "token": token,
+                    "token_id": token_id,
+                    "decoded": decoded,
+                    "embedding": {
+                        "row": token_id,
+                        "dimension": vector.shape[0],
+                        "preview": vector[:16].tolist(),
+                    },
+                }
+            )
 
         layers = []
 
-        for layer_index, layer in enumerate(self.model.model.layers):
-
+        for layer_index, layer in enumerate(
+            self.model.model.layers
+        ):
             layers.append(
                 {
                     "index": layer_index,
@@ -168,7 +208,11 @@ class ModelManager:
                         {
                             "name": "input_layernorm",
                             "type": "normalization",
-                            "shape": [1, input_ids.shape[1], config.hidden_size],
+                            "shape": [
+                                1,
+                                input_ids.shape[1],
+                                config.hidden_size,
+                            ],
                         },
                         {
                             "name": "attention",
@@ -211,7 +255,11 @@ class ModelManager:
                         {
                             "name": "post_attention_layernorm",
                             "type": "normalization",
-                            "shape": [1, input_ids.shape[1], config.hidden_size],
+                            "shape": [
+                                1,
+                                input_ids.shape[1],
+                                config.hidden_size,
+                            ],
                         },
                         {
                             "name": "mlp",
@@ -247,13 +295,12 @@ class ModelManager:
                 }
             )
 
-        # ---------------------------------------------------------
-        # Top next-token predictions
-        # ---------------------------------------------------------
-
         last_logits = logits[0, -1]
 
-        probabilities = torch.softmax(last_logits, dim=-1)
+        probabilities = torch.softmax(
+            last_logits,
+            dim=-1,
+        )
 
         top_probabilities, top_ids = torch.topk(
             probabilities,
@@ -276,10 +323,6 @@ class ModelManager:
                 }
             )
 
-        # ---------------------------------------------------------
-        # Response
-        # ---------------------------------------------------------
-
         return {
             "model": {
                 "name": config.name_or_path,
@@ -288,28 +331,21 @@ class ModelManager:
                 "vocab_size": config.vocab_size,
             },
 
+            "tokenizer": {
+                "name": self.tokenizer.name_or_path,
+                "class": tokenizer_class,
+                "model_type": tokenizer_model_type,
+                "vocab_size": tokenizer_vocab_size,
+            },
+
             "prompt": prompt,
 
-            "tokens": [
-                {
-                    "position": position,
-                    "token": token,
-                    "token_id": token_id,
-                }
-                for position, (token, token_id)
-                in enumerate(
-                    zip(
-                        self.tokenizer.convert_ids_to_tokens(
-                            input_ids[0]
-                        ),
-                        input_ids[0].tolist(),
-                    )
-                )
-            ],
+            "tokens": tokens,
 
             "embedding": {
-                "name": "token_embeddings",
-                "shape": list(embeddings.shape),
+                "matrix_shape": embedding_matrix_shape,
+                "dimension": embedding_matrix_shape[1],
+                "sequence_shape": list(embeddings.shape),
             },
 
             "layers": layers,
