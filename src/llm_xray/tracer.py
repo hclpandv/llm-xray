@@ -28,13 +28,50 @@ class TransformerTracer:
         if not isinstance(tensor, torch.Tensor):
             return
 
+        values = (
+            tensor.detach()
+            .float()
+            .flatten()
+            .cpu()
+        )
+
+        preview = values[:16].tolist()
+
+        finite_values = values[torch.isfinite(values)]
+
+        # Hugging Face / PyTorch attention masking may use the minimum
+        # representable floating-point value instead of -inf.
+        mask_sentinel = torch.finfo(values.dtype).min
+
+        statistical_values = finite_values[
+            finite_values != mask_sentinel
+        ]
+
+        stats = {
+            "min": None,
+            "max": None,
+            "mean": None,
+            "std": None,
+        }
+
+        if statistical_values.numel() > 0:
+            stats = {
+                "min": statistical_values.min().item(),
+                "max": statistical_values.max().item(),
+                "mean": statistical_values.mean().item(),
+                "std": statistical_values.std(
+                    correction=0
+                ).item(),
+            }
+
         self.trace.append(
             {
                 "name": name,
                 "shape": list(tensor.shape),
                 "dtype": str(tensor.dtype),
                 "device": str(tensor.device),
-                "preview": self._preview(tensor),
+                "preview": preview,
+                "stats": stats,
             }
         )
 
