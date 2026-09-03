@@ -4,6 +4,8 @@ from transformers.modeling_utils import ALL_ATTENTION_FUNCTIONS
 
 from .attention import make_inspection_attention
 from .config import MODEL_NAME
+from .mlp import make_inspection_mlp
+from .residual import make_inspection_decoder_layer
 from .schemas import GenerationResponse, TokenInfo
 from .tracer import TransformerTracer
 
@@ -18,6 +20,66 @@ class ModelManager:
         self.attention_implementation_name = (
             "llm_xray_inspection"
         )
+
+    def _enable_residual_inspection(self):
+        self.original_layer_forwards = {}
+
+        for layer_index, layer in enumerate(
+            self.model.model.layers
+        ):
+            self.original_layer_forwards[layer_index] = (
+                layer.forward
+            )
+
+            layer.forward = make_inspection_decoder_layer(
+                self.tracer,
+                layer_index,
+            ).__get__(
+                layer,
+                type(layer),
+            )
+
+    def _disable_residual_inspection(self):
+        for layer_index, layer in enumerate(
+            self.model.model.layers
+        ):
+            layer.forward = (
+                self.original_layer_forwards[layer_index]
+            )
+
+        self.original_layer_forwards.clear()
+
+    def _enable_mlp_inspection(self):
+        self.original_mlp_forwards = {}
+
+        for layer_index, layer in enumerate(
+            self.model.model.layers
+        ):
+            mlp = layer.mlp
+
+            self.original_mlp_forwards[layer_index] = (
+                mlp.forward
+            )
+
+            mlp.forward = make_inspection_mlp(
+                self.tracer,
+                layer_index,
+            ).__get__(
+                mlp,
+                type(mlp),
+            )
+
+
+    def _disable_mlp_inspection(self):
+        for layer_index, layer in enumerate(
+            self.model.model.layers
+        ):
+            layer.mlp.forward = (
+                self.original_mlp_forwards[layer_index]
+            )
+
+        self.original_mlp_forwards.clear()
+    
 
     @staticmethod
     def _detect_device() -> str:
@@ -172,6 +234,8 @@ class ModelManager:
         self.tracer.clear()
 
         self._enable_attention_inspection()
+        self._enable_residual_inspection()
+        self._enable_mlp_inspection()
 
         try:
             outputs = self.model(
@@ -179,6 +243,8 @@ class ModelManager:
                 output_hidden_states=True,
             )
         finally:
+            self._disable_residual_inspection()
+            self._disable_attention_inspection()
             self._disable_attention_inspection()
 
         trace = self.tracer.get_trace()

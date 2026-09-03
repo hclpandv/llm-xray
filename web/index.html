@@ -1176,26 +1176,16 @@ function createTransformerGraph(
     layerIndex,
     entries
 ) {
+    const wrapper = document.createElement("div");
 
-    const wrapper =
-        document.createElement("div");
-
-    const graph =
-        document.createElement("div");
-
-    graph.className =
-        "transformer-graph";
+    const graph = document.createElement("div");
+    graph.className = "transformer-graph";
 
     const map = {};
 
     for (const entry of entries) {
-        map[shortOperationName(entry.name)] =
-            entry;
+        map[shortOperationName(entry.name)] = entry;
     }
-
-    /*
-     * Input
-     */
 
     graph.appendChild(
         createTraceNode(
@@ -1204,13 +1194,7 @@ function createTransformerGraph(
         )
     );
 
-    graph.appendChild(
-        createArrow()
-    );
-
-    /*
-     * Input RMSNorm
-     */
+    graph.appendChild(createArrow());
 
     graph.appendChild(
         createTraceNode(
@@ -1219,18 +1203,16 @@ function createTransformerGraph(
         )
     );
 
-    graph.appendChild(
-        createArrow()
-    );
+    graph.appendChild(createArrow());
 
-    /*
-     * Q / K / V
-     */
+    // ------------------------------------------------------------
+    // Attention projections
+    // ------------------------------------------------------------
 
-    const branches =
+    const attentionBranches =
         document.createElement("div");
 
-    branches.className =
+    attentionBranches.className =
         "attention-branches";
 
     for (
@@ -1240,12 +1222,10 @@ function createTransformerGraph(
             ["v_proj", "V Projection"]
         ]
     ) {
-
         const branch =
             document.createElement("div");
 
-        branch.className =
-            "branch";
+        branch.className = "branch";
 
         branch.appendChild(
             createTraceNode(
@@ -1254,18 +1234,16 @@ function createTransformerGraph(
             )
         );
 
-        branches.appendChild(branch);
+        attentionBranches.appendChild(
+            branch
+        );
     }
 
-    graph.appendChild(branches);
-
-    /*
-     * Attention Scores
-     */
-
     graph.appendChild(
-        createArrow()
+        attentionBranches
     );
+
+    graph.appendChild(createArrow());
 
     graph.appendChild(
         createTraceNode(
@@ -1274,13 +1252,7 @@ function createTransformerGraph(
         )
     );
 
-    /*
-     * Causal mask
-     */
-
-    graph.appendChild(
-        createArrow()
-    );
+    graph.appendChild(createArrow());
 
     graph.appendChild(
         createTraceNode(
@@ -1289,16 +1261,7 @@ function createTransformerGraph(
         )
     );
 
-    /*
-     * Softmax / Attention Weights
-     *
-     * The softmax operation itself is not a separately
-     * captured module, but the resulting tensor is real.
-     */
-
-    graph.appendChild(
-        createArrow()
-    );
+    graph.appendChild(createArrow());
 
     graph.appendChild(
         createTraceNode(
@@ -1307,13 +1270,7 @@ function createTransformerGraph(
         )
     );
 
-    /*
-     * Weighted Values
-     */
-
-    graph.appendChild(
-        createArrow()
-    );
+    graph.appendChild(createArrow());
 
     graph.appendChild(
         createTraceNode(
@@ -1322,13 +1279,7 @@ function createTransformerGraph(
         )
     );
 
-    /*
-     * Attention heads
-     */
-
-    graph.appendChild(
-        createArrow()
-    );
+    graph.appendChild(createArrow());
 
     graph.appendChild(
         createTraceNode(
@@ -1337,33 +1288,15 @@ function createTransformerGraph(
         )
     );
 
-    /*
-     * Merge heads
-     *
-     * This is the reshape that turns:
-     *
-     * [batch, sequence, heads, head_dim]
-     *
-     * into:
-     *
-     * [batch, sequence, hidden_size]
-     */
-
     graph.appendChild(
         createConceptualNode(
             "Merge Heads",
             "reshape heads → hidden dimension",
-            "Tensor reshape performed inside the attention module"
+            "Conceptual — tensor reshape performed inside the attention module"
         )
     );
 
-    graph.appendChild(
-        createArrow()
-    );
-
-    /*
-     * Merged attention output
-     */
+    graph.appendChild(createArrow());
 
     graph.appendChild(
         createTraceNode(
@@ -1372,13 +1305,7 @@ function createTransformerGraph(
         )
     );
 
-    graph.appendChild(
-        createArrow()
-    );
-
-    /*
-     * O projection
-     */
+    graph.appendChild(createArrow());
 
     graph.appendChild(
         createTraceNode(
@@ -1387,31 +1314,20 @@ function createTransformerGraph(
         )
     );
 
-    graph.appendChild(
-        createArrow()
-    );
+    graph.appendChild(createArrow());
 
-    /*
-     * Attention residual
-     *
-     * This is still conceptual until Milestone 2.2.
-     */
+    // ------------------------------------------------------------
+    // Actual attention residual
+    // ------------------------------------------------------------
 
     graph.appendChild(
-        createConceptualNode(
-            "Residual Add",
-            "attention output + layer input",
-            "Conceptual — residual addition is not separately captured yet"
+        createTraceNode(
+            map["attention_residual"],
+            "Attention Residual"
         )
     );
 
-    graph.appendChild(
-        createArrow()
-    );
-
-    /*
-     * Post attention RMSNorm
-     */
+    graph.appendChild(createArrow());
 
     graph.appendChild(
         createTraceNode(
@@ -1420,13 +1336,11 @@ function createTransformerGraph(
         )
     );
 
-    graph.appendChild(
-        createArrow()
-    );
+    graph.appendChild(createArrow());
 
-    /*
-     * MLP gate / up
-     */
+    // ------------------------------------------------------------
+    // MLP
+    // ------------------------------------------------------------
 
     const mlpBranches =
         document.createElement("div");
@@ -1440,12 +1354,10 @@ function createTransformerGraph(
             ["up_proj", "Up Projection"]
         ]
     ) {
-
         const branch =
             document.createElement("div");
 
-        branch.className =
-            "branch";
+        branch.className = "branch";
 
         branch.appendChild(
             createTraceNode(
@@ -1454,26 +1366,32 @@ function createTransformerGraph(
             )
         );
 
-        mlpBranches.appendChild(branch);
+        mlpBranches.appendChild(
+            branch
+        );
     }
 
-    graph.appendChild(mlpBranches);
+    graph.appendChild(
+        mlpBranches
+    );
 
     graph.appendChild(
-        createConceptualNode(
-            "SiLU × Gate",
-            "activation(gate) × up",
-            "Conceptual — activation/multiplication is not separately captured yet"
+        createTraceNode(
+            map["activation"],
+            "SiLU Activation"
         )
     );
 
+    graph.appendChild(createArrow());
+
     graph.appendChild(
-        createArrow()
+        createTraceNode(
+            map["gated_output"],
+            "Gated MLP Output"
+        )
     );
 
-    /*
-     * Down projection
-     */
+    graph.appendChild(createArrow());
 
     graph.appendChild(
         createTraceNode(
@@ -1482,35 +1400,29 @@ function createTransformerGraph(
         )
     );
 
-    graph.appendChild(
-        createArrow()
-    );
+    graph.appendChild(createArrow());
 
-    /*
-     * Final residual
-     */
+    // ------------------------------------------------------------
+    // Actual MLP residual
+    // ------------------------------------------------------------
 
     graph.appendChild(
-        createConceptualNode(
-            "Residual Add",
-            "MLP output + attention residual",
-            "Conceptual — residual addition is not separately captured yet"
+        createTraceNode(
+            map["mlp_residual"],
+            "MLP Residual"
         )
     );
 
-    graph.appendChild(
-        createArrow()
-    );
+    graph.appendChild(createArrow());
 
-    /*
-     * Layer output
-     */
+    // ------------------------------------------------------------
+    // Actual layer output
+    // ------------------------------------------------------------
 
     graph.appendChild(
-        createConceptualNode(
-            `Layer ${layerIndex} output`,
-            entries[entries.length - 1]?.shape || [],
-            "Conceptual endpoint — will become a captured tensor in a later milestone"
+        createTraceNode(
+            map["output"],
+            `Layer ${layerIndex} Output`
         )
     );
 
@@ -1518,6 +1430,7 @@ function createTransformerGraph(
 
     return wrapper;
 }
+
 
 /* =========================================================
    Trace node

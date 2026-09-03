@@ -69,6 +69,12 @@ class TransformerTracer:
             )
 
             self.handles.append(
+                layer.register_forward_hook(
+                    self._record(f"{prefix}.output")
+                )
+            )
+
+            self.handles.append(
                 layer.input_layernorm.register_forward_hook(
                     self._record(f"{prefix}.input_layernorm")
                 )
