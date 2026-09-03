@@ -69,7 +69,6 @@ class ModelManager:
                 type(mlp),
             )
 
-
     def _disable_mlp_inspection(self):
         for layer_index, layer in enumerate(
             self.model.model.layers
@@ -79,7 +78,6 @@ class ModelManager:
             )
 
         self.original_mlp_forwards.clear()
-    
 
     @staticmethod
     def _detect_device() -> str:
@@ -205,7 +203,112 @@ class ModelManager:
         )
 
     @torch.inference_mode()
-    def inspect_prompt(self, prompt: str) -> dict:
+    def _generate_inspection_steps(
+        self,
+        input_ids: torch.Tensor,
+        max_new_tokens: int,
+    ) -> list[dict]:
+        """
+        Run a simple autoregressive generation loop.
+
+        Each step performs a full forward pass over the current context,
+        selects the highest-probability next token, and appends it.
+        This intentionally favors transparency over KV-cache efficiency.
+        """
+        generation_steps = []
+
+        current_ids = input_ids.clone()
+
+        eos_token_id = self.tokenizer.eos_token_id
+
+        for step in range(1, max_new_tokens + 1):
+            outputs = self.model(
+                input_ids=current_ids,
+            )
+
+            last_logits = outputs.logits[:, -1, :]
+
+            probabilities = torch.softmax(
+                last_logits,
+                dim=-1,
+            )
+
+            probability, next_token_id = torch.max(
+                probabilities,
+                dim=-1,
+            )
+
+            next_token_id_value = next_token_id.item()
+            probability_value = probability.item()
+
+            context_text = self.tokenizer.decode(
+                current_ids[0],
+                skip_special_tokens=False,
+            )
+
+            token_text = self.tokenizer.decode(
+                [next_token_id_value],
+                skip_special_tokens=False,
+            )
+
+            top_probabilities, top_ids = torch.topk(
+                probabilities,
+                k=5,
+                dim=-1,
+            )
+
+            top_tokens = []
+
+            for candidate_probability, candidate_id in zip(
+                top_probabilities[0],
+                top_ids[0],
+            ):
+                candidate_id_value = candidate_id.item()
+
+                top_tokens.append(
+                    {
+                        "token": self.tokenizer.decode(
+                            [candidate_id_value],
+                            skip_special_tokens=False,
+                        ),
+                        "token_id": candidate_id_value,
+                        "probability": candidate_probability.item(),
+                    }
+                )
+
+            generation_steps.append(
+                {
+                    "step": step,
+                    "context": context_text,
+                    "token": token_text,
+                    "token_id": next_token_id_value,
+                    "probability": probability_value,
+                    "top_tokens": top_tokens,
+                }
+            )
+
+            current_ids = torch.cat(
+                [
+                    current_ids,
+                    next_token_id.unsqueeze(0),
+                ],
+                dim=1,
+            )
+
+            if (
+                eos_token_id is not None
+                and next_token_id_value == eos_token_id
+            ):
+                break
+
+        return generation_steps
+
+    @torch.inference_mode()
+    def inspect_prompt(
+        self,
+        prompt: str,
+        max_new_tokens: int = 32,
+    ) -> dict:
         if self.model is None:
             raise RuntimeError(
                 "Model has not been loaded."
@@ -243,8 +346,8 @@ class ModelManager:
                 output_hidden_states=True,
             )
         finally:
+            self._disable_mlp_inspection()
             self._disable_residual_inspection()
-            self._disable_attention_inspection()
             self._disable_attention_inspection()
 
         trace = self.tracer.get_trace()
@@ -515,6 +618,11 @@ class ModelManager:
                 }
             )
 
+        generation_steps = self._generate_inspection_steps(
+            input_ids,
+            max_new_tokens,
+        )
+
         return {
             "model": {
                 "name": config.name_or_path,
@@ -550,4 +658,5 @@ class ModelManager:
                 "shape": list(logits.shape),
             },
             "next_tokens": next_tokens,
+            "generation_steps": generation_steps,
         }

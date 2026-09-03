@@ -11,7 +11,6 @@
 
     <style>
         :root {
-            /* ---- color tokens ---- */
             --ink: #090b10;
             --panel: #10141b;
             --panel-raised: #151a23;
@@ -20,16 +19,14 @@
             --text: #e8ebf2;
             --text-dim: #99a1b5;
             --text-faint: #5b6379;
-            --signal: #f0a944;      /* primary accent — active / selected / actionable */
+            --signal: #f0a944;
             --signal-dim: #7a5a2c;
-            --trace: #48c9d0;       /* secondary accent — structure / flow */
+            --trace: #48c9d0;
             --danger: #e0685f;
 
-            /* ---- type tokens ---- */
             --font-ui: "Space Grotesk", -apple-system, BlinkMacSystemFont, sans-serif;
             --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
-            /* ---- spacing / radius ---- */
             --radius: 6px;
             --radius-sm: 4px;
         }
@@ -117,7 +114,7 @@
         }
 
         /* =========================================================
-           Panels (formerly .card)
+           Panels
            ========================================================= */
 
         .card {
@@ -129,7 +126,6 @@
             margin-bottom: 20px;
         }
 
-        /* corner reticle — the one recurring signature device */
         .card::before,
         .card::after {
             content: "";
@@ -172,7 +168,7 @@
         }
 
         /* =========================================================
-           Prompt panel
+           Prompt
            ========================================================= */
 
         textarea {
@@ -725,26 +721,81 @@
            Generation
            ========================================================= */
 
-        .generated-text {
+        .generation-intro {
+            color: var(--text-dim);
+            font-size: 13px;
+            line-height: 1.65;
+            margin-bottom: 18px;
+            max-width: 72ch;
+        }
+
+        .generation-stage {
             background: var(--panel-raised);
             border: 1px solid var(--line);
+            border-left: 2px solid var(--signal);
             border-radius: var(--radius-sm);
-            padding: 18px 20px;
+            padding: 22px 24px;
+        }
+
+        .generation-stage-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 16px;
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            color: var(--text-faint);
+            min-height: 16px;
+        }
+
+        .generation-step-prob {
+            color: var(--signal);
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity .3s ease;
+        }
+
+        .generation-step-prob.show { opacity: 1; }
+
+        .generated-text {
+            color: var(--text);
             font-family: var(--font-mono);
             font-size: 14.5px;
             line-height: 1.7;
             white-space: pre-wrap;
+            overflow-wrap: anywhere;
+            min-height: 1.7em;
         }
 
-        @media (max-width: 700px) {
-            .tokenizer-info { grid-template-columns: 1fr; }
-            .embedding-flow { flex-direction: column; }
-            .embedding-arrow { display: none; }
-            .embedding-step, .embedding-vector { width: 100%; max-width: none; }
-            .attention-branches { grid-template-columns: 1fr; }
-            .attention-branches::before, .attention-join { display: none; }
-            .trace-modal-meta { grid-template-columns: 1fr; }
-            .prompt-footer { align-items: stretch; }
+        .gen-token {
+            border-radius: 3px;
+            animation: tokenAccept 900ms ease forwards;
+        }
+
+        @keyframes tokenAccept {
+            0%   { background: rgba(240,169,68,.45); }
+            100% { background: rgba(240,169,68,0); }
+        }
+
+        .gen-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1.1em;
+            background: var(--signal);
+            margin-left: 1px;
+            vertical-align: -0.15em;
+            animation: gen-blink 1s step-end infinite;
+        }
+
+        @keyframes gen-blink {
+            50% { opacity: 0; }
+        }
+
+        .generation-empty {
+            color: var(--text-faint);
+            font-family: var(--font-mono);
+            font-size: 12px;
         }
 
         /* =========================================================
@@ -1016,6 +1067,17 @@
             color: var(--text-dim);
         }
 
+        @media (max-width: 700px) {
+            .tokenizer-info { grid-template-columns: 1fr; }
+            .embedding-flow { flex-direction: column; }
+            .embedding-arrow { display: none; }
+            .embedding-step, .embedding-vector { width: 100%; max-width: none; }
+            .attention-branches { grid-template-columns: 1fr; }
+            .attention-branches::before, .attention-join { display: none; }
+            .trace-modal-meta { grid-template-columns: 1fr; }
+            .prompt-footer { align-items: stretch; }
+        }
+
         @media (max-width: 600px) {
             .trace-modal { padding: 12px; }
             .trace-modal-content { padding: 22px; }
@@ -1066,7 +1128,9 @@
                 Run inspection
             </button>
 
-            <div id="status" class="status">Enter a prompt above, then run the inspection to trace it through the model.</div>
+            <div id="status" class="status">
+                Enter a prompt above, then run the inspection to trace it through the model.
+            </div>
         </div>
 
     </section>
@@ -1176,7 +1240,21 @@
 
         <h2>5. Generation</h2>
 
-        <div id="generatedText" class="generated-text"></div>
+        <div class="generation-intro">
+            The model generates one token at a time: it looks at everything so far,
+            picks the most likely next token, appends it, and repeats.
+        </div>
+
+        <div class="generation-stage">
+
+            <div class="generation-stage-meta">
+                <span id="generationStepCount"></span>
+                <span id="generationStepProb" class="generation-step-prob"></span>
+            </div>
+
+            <div id="generatedText" class="generated-text"></div>
+
+        </div>
 
     </section>
 
@@ -1215,7 +1293,8 @@ async function inspectModel() {
             },
 
             body: JSON.stringify({
-                prompt: prompt
+                prompt: prompt,
+                max_new_tokens: 20
             })
 
         });
@@ -1237,7 +1316,7 @@ async function inspectModel() {
         renderExecutionTrace(data);
         renderProbabilities(data);
 
-        await renderGeneration(prompt);
+        await renderGeneration(data);
 
         status.textContent =
             `Inspection complete — captured ` +
@@ -1768,10 +1847,6 @@ function createTransformerGraph(
         createArrow()
     );
 
-    /* ------------------------------------------------------
-       Attention projections
-       ------------------------------------------------------ */
-
     const attentionBranches =
         document.createElement("div");
 
@@ -1905,10 +1980,6 @@ function createTransformerGraph(
         createArrow()
     );
 
-    /* ------------------------------------------------------
-       Attention residual
-       ------------------------------------------------------ */
-
     graph.appendChild(
         createTraceNode(
             map["attention_residual"],
@@ -1932,10 +2003,6 @@ function createTransformerGraph(
     graph.appendChild(
         createArrow()
     );
-
-    /* ------------------------------------------------------
-       MLP
-       ------------------------------------------------------ */
 
     const mlpBranches =
         document.createElement("div");
@@ -2009,10 +2076,6 @@ function createTransformerGraph(
         createArrow()
     );
 
-    /* ------------------------------------------------------
-       MLP residual
-       ------------------------------------------------------ */
-
     graph.appendChild(
         createTraceNode(
             map["mlp_residual"],
@@ -2024,10 +2087,6 @@ function createTransformerGraph(
     graph.appendChild(
         createArrow()
     );
-
-    /* ------------------------------------------------------
-       Layer output
-       ------------------------------------------------------ */
 
     graph.appendChild(
         createTraceNode(
@@ -2100,20 +2159,6 @@ function createTraceNode(
 
         node.classList.add("selected");
 
-        /*
-         * IMPORTANT:
-         *
-         * Pass the actual trace entry directly.
-         *
-         * The previous version accidentally passed:
-         *
-         *     node.closest(".layer-body")
-         *
-         * as the first argument.
-         *
-         * That meant showTraceDetail() received the wrong object.
-         */
-
         openTraceModal(
             entry,
             label
@@ -2183,12 +2228,7 @@ function createArrow() {
 
 
 /* =========================================================
-   Plain-language glossary of each operation
-
-   Keyed by the short operation name (see shortOperationName).
-   Each entry explains, in one or two sentences, what actually
-   happens to the numbers at this step — and what each axis of
-   the tensor represents, so the shape isn't just "3 numbers".
+   Operation glossary
    ========================================================= */
 
 const OPERATION_INFO = {
@@ -2300,13 +2340,6 @@ const OPERATION_INFO = {
 
 };
 
-/* =========================================================
-   Line up semantic dimension labels (defined without a batch
-   axis, since that's what's meaningful about each op) against
-   whatever rank the tensor actually captured at. The batch
-   axis, when present, is always leftmost, so labels align
-   from the right and any extra leading axis is called "batch".
-   ========================================================= */
 
 function alignDimLabels(canonical, shapeLength) {
 
@@ -2335,23 +2368,31 @@ function alignDimLabels(canonical, shapeLength) {
 
     }
 
-    // Tensor has fewer dimensions than the canonical
-    // description (e.g. an unbatched trace) — keep the
-    // trailing, most meaningful labels.
-    return canonical.slice(canonical.length - shapeLength);
+    return canonical.slice(
+        canonical.length - shapeLength
+    );
 }
 
 
 const STAT_CAPTIONS = {
-    Min: "smallest value anywhere in the tensor",
-    Max: "largest value anywhere in the tensor",
-    Mean: "average value — near zero usually means positive and negative activations are balanced",
-    Std: "how spread out values are around the mean; larger means more variation position to position"
+
+    Min:
+        "smallest value anywhere in the tensor",
+
+    Max:
+        "largest value anywhere in the tensor",
+
+    Mean:
+        "average value — near zero usually means positive and negative activations are balanced",
+
+    Std:
+        "how spread out values are around the mean; larger means more variation position to position"
+
 };
 
 
 /* =========================================================
-   Trace detail panel
+   Tensor inspection modal
    ========================================================= */
 
 function openTraceModal(entry, label) {
@@ -2363,23 +2404,30 @@ function openTraceModal(entry, label) {
         document.getElementById("traceModalBody");
 
     if (!modal || !body || !entry) {
+
         console.error(
             "Trace modal unavailable:",
             entry,
             label
         );
+
         return;
     }
 
-    const stats = entry.stats;
+    const stats =
+        entry.stats;
 
     const opKey =
         shortOperationName(entry.name);
 
     const info =
         OPERATION_INFO[opKey] || {
-            text: "A tensor captured at this point in the forward pass.",
+
+            text:
+                "A tensor captured at this point in the forward pass.",
+
             dims: null
+
         };
 
     const shapeArray =
@@ -2398,15 +2446,21 @@ function openTraceModal(entry, label) {
             .map((size, index) => {
 
                 const dimLabel =
-                    dimLabels && dimLabels[index]
+                    dimLabels &&
+                    dimLabels[index]
                         ? dimLabels[index]
                         : `dimension ${index}`;
 
                 return `
 
                     <div class="shape-dim">
-                        <strong>${size.toLocaleString()}</strong>
-                        <span>${escapeHtml(dimLabel)}</span>
+                        <strong>
+                            ${size.toLocaleString()}
+                        </strong>
+
+                        <span>
+                            ${escapeHtml(dimLabel)}
+                        </span>
                     </div>
                 `;
 
@@ -2426,8 +2480,11 @@ function openTraceModal(entry, label) {
             : null;
 
     const valuesNote =
-        lastDim && lastDim > previewValues.length
+        lastDim &&
+        lastDim > previewValues.length
+
             ? `Showing the first ${previewValues.length} of ${lastDim.toLocaleString()} values along the last dimension — not the whole tensor.`
+
             : `Showing all ${previewValues.length} values along the last dimension.`;
 
     body.innerHTML = `
@@ -2446,7 +2503,9 @@ function openTraceModal(entry, label) {
 
         <div class="trace-modal-section">
 
-            <h4>Shape — what each dimension means</h4>
+            <h4>
+                Shape — what each dimension means
+            </h4>
 
             <div class="shape-breakdown">
                 ${shapeChips}
@@ -2457,27 +2516,45 @@ function openTraceModal(entry, label) {
         <div class="trace-modal-meta">
 
             <div>
+
                 <span>dtype</span>
+
                 <strong>
                     ${escapeHtml(entry.dtype)}
                 </strong>
-                <p>numeric precision used to store this tensor</p>
+
+                <p>
+                    numeric precision used to store this tensor
+                </p>
+
             </div>
 
             <div>
+
                 <span>device</span>
+
                 <strong>
                     ${escapeHtml(entry.device)}
                 </strong>
-                <p>hardware this operation ran on</p>
+
+                <p>
+                    hardware this operation ran on
+                </p>
+
             </div>
 
             <div>
+
                 <span>full shape</span>
+
                 <strong>
                     ${formatShape(entry.shape)}
                 </strong>
-                <p>raw dimensions, in order</p>
+
+                <p>
+                    raw dimensions, in order
+                </p>
+
             </div>
 
         </div>
@@ -2485,9 +2562,12 @@ function openTraceModal(entry, label) {
         ${
             stats
                 ? `
+
                     <div class="trace-modal-section">
 
-                        <h4>Statistics across the whole tensor</h4>
+                        <h4>
+                            Statistics across the whole tensor
+                        </h4>
 
                         <div class="tensor-stats">
 
@@ -2498,17 +2578,27 @@ function openTraceModal(entry, label) {
                                     ["Mean", stats.mean],
                                     ["Std", stats.std]
                                 ]
-                                    .map(([name, value]) => `
+                                    .map(
+                                        ([name, value]) => `
 
-                                        <div class="tensor-stat">
-                                            <span>${name}</span>
-                                            <strong>
-                                                ${formatNumber(value)}
-                                            </strong>
-                                            <p>${STAT_CAPTIONS[name]}</p>
-                                        </div>
+                                            <div class="tensor-stat">
 
-                                    `)
+                                                <span>
+                                                    ${name}
+                                                </span>
+
+                                                <strong>
+                                                    ${formatNumber(value)}
+                                                </strong>
+
+                                                <p>
+                                                    ${STAT_CAPTIONS[name]}
+                                                </p>
+
+                                            </div>
+
+                                        `
+                                    )
                                     .join("")
                             }
 
@@ -2521,7 +2611,9 @@ function openTraceModal(entry, label) {
 
         <div class="trace-modal-section">
 
-            <h4>Sample values</h4>
+            <h4>
+                Sample values
+            </h4>
 
             <div class="values-note">
                 ${valuesNote}
@@ -2536,28 +2628,32 @@ function openTraceModal(entry, label) {
 
     modal.classList.add("open");
 
-    document.body.style.overflow = "hidden";
+    document.body.style.overflow =
+        "hidden";
 }
 
 
 /* =========================================================
-   Render a small bidirectional bar per value, so the sample
-   values read as a shape at a glance instead of a bare list
-   of numbers.
+   Tensor bars
    ========================================================= */
 
 function renderTensorBars(values) {
 
     if (!values || values.length === 0) {
 
-        return `<div class="status">No sample values were captured for this tensor.</div>`;
+        return `
+            <div class="status">
+                No sample values were captured for this tensor.
+            </div>
+        `;
 
     }
 
     const maxAbs =
         Math.max(
             ...values.map(
-                value => Math.abs(Number(value))
+                value =>
+                    Math.abs(Number(value))
             ),
             1e-9
         );
@@ -2571,11 +2667,16 @@ function renderTensorBars(values) {
             const pct =
                 Math.min(
                     100,
-                    (Math.abs(number) / maxAbs) * 100
+                    (
+                        Math.abs(number) /
+                        maxAbs
+                    ) * 100
                 );
 
             const sign =
-                number >= 0 ? "pos" : "neg";
+                number >= 0
+                    ? "pos"
+                    : "neg";
 
             return `
 
@@ -2586,10 +2687,12 @@ function renderTensorBars(values) {
                     </span>
 
                     <div class="tensor-bar-track">
+
                         <div
                             class="tensor-bar-fill ${sign}"
                             style="width:${pct}%"
                         ></div>
+
                     </div>
 
                     <span class="tensor-bar-value">
@@ -2623,17 +2726,21 @@ function closeTraceModal(event) {
 
     modal.classList.remove("open");
 
-    document.body.style.overflow = "";
+    document.body.style.overflow =
+        "";
 }
 
 
-document.addEventListener("keydown", (event) => {
+document.addEventListener(
+    "keydown",
+    event => {
 
-    if (event.key === "Escape") {
-        closeTraceModal();
+        if (event.key === "Escape") {
+            closeTraceModal();
+        }
+
     }
-
-});
+);
 
 
 /* =========================================================
@@ -2675,7 +2782,7 @@ function groupTraceByLayer(trace) {
 
 
 /* =========================================================
-   Convert full operation name to short key
+   Short operation name
    ========================================================= */
 
 function shortOperationName(name) {
@@ -2712,7 +2819,8 @@ function renderProbabilities(data) {
 
     document.getElementById(
         "probabilityCard"
-    ).style.display = "block";
+    ).style.display =
+        "block";
 
     const container =
         document.getElementById(
@@ -2780,16 +2888,31 @@ function renderProbabilities(data) {
 
 /* =========================================================
    Generation
+
+   Renders the token-by-token generation loop as a single
+   live block of text: each new token is appended with a
+   brief highlight, and a small meta line above shows which
+   step is in progress and how confident the model was.
    ========================================================= */
 
-async function renderGeneration(prompt) {
+async function renderGeneration(data) {
 
     const card =
         document.getElementById(
             "generationCard"
         );
 
-    const container =
+    const stepCount =
+        document.getElementById(
+            "generationStepCount"
+        );
+
+    const stepProb =
+        document.getElementById(
+            "generationStepProb"
+        );
+
+    const textEl =
         document.getElementById(
             "generatedText"
         );
@@ -2797,40 +2920,118 @@ async function renderGeneration(prompt) {
     card.style.display =
         "block";
 
-    container.textContent =
-        "Generating response...";
+    textEl.innerHTML =
+        "";
 
-    const response =
-        await fetch(
-            "/generate",
-            {
-                method: "POST",
+    stepProb.textContent =
+        "";
 
-                headers: {
-                    "Content-Type":
-                        "application/json"
-                },
+    stepProb.classList.remove(
+        "show"
+    );
 
-                body: JSON.stringify({
-                    prompt: prompt,
-                    max_new_tokens: 32
-                })
-            }
+    const steps =
+        Array.isArray(data.generation_steps)
+            ? data.generation_steps
+            : [];
+
+    if (steps.length === 0) {
+
+        stepCount.textContent =
+            "";
+
+        textEl.innerHTML = `
+            <span class="generation-empty">
+                No generation steps were returned by the model.
+            </span>
+        `;
+
+        return;
+    }
+
+    const cursor =
+        document.createElement("span");
+
+    cursor.className =
+        "gen-cursor";
+
+    textEl.appendChild(
+        cursor
+    );
+
+    const total =
+        steps.length;
+
+    for (
+        let i = 0;
+        i < total;
+        i++
+    ) {
+
+        const step =
+            steps[i];
+
+        const probability =
+            Number(step.probability);
+
+        stepCount.textContent =
+            `Token ${i + 1} of ${total}`;
+
+        stepProb.textContent =
+            `${(probability * 100).toFixed(1)}% confidence`;
+
+        stepProb.classList.add(
+            "show"
         );
 
-    if (!response.ok) {
+        const tokenSpan =
+            document.createElement("span");
 
-        throw new Error(
-            `Generation request failed: ${response.status}`
+        tokenSpan.className =
+            "gen-token";
+
+        tokenSpan.textContent =
+            step.token;
+
+        textEl.insertBefore(
+            tokenSpan,
+            cursor
         );
+
+        await sleep(450);
+
+        stepProb.classList.remove(
+            "show"
+        );
+
+        await sleep(150);
 
     }
 
-    const data =
-        await response.json();
+    cursor.remove();
 
-    container.textContent =
-        data.generated_text;
+    stepCount.textContent =
+        `Generated ${total} tokens`;
+
+    stepProb.textContent =
+        "";
+
+}
+
+
+/* =========================================================
+   Small async delay for generation visualization
+   ========================================================= */
+
+function sleep(milliseconds) {
+
+    return new Promise(
+        resolve =>
+            setTimeout(
+                resolve,
+                milliseconds
+            )
+    );
 }
 
 
@@ -2906,30 +3107,32 @@ function escapeHtml(value) {
 </script>
 
 
-    <!-- Tensor inspection modal -->
+<!-- Tensor inspection modal -->
+
+<div
+    id="traceModal"
+    class="trace-modal"
+    onclick="closeTraceModal(event)"
+>
 
     <div
-        id="traceModal"
-        class="trace-modal"
-        onclick="closeTraceModal(event)"
+        class="trace-modal-content"
+        onclick="event.stopPropagation()"
     >
-        <div
-            class="trace-modal-content"
-            onclick="event.stopPropagation()"
+
+        <button
+            class="trace-modal-close"
+            onclick="closeTraceModal()"
+            aria-label="Close"
         >
+            ✕
+        </button>
 
-            <button
-                class="trace-modal-close"
-                onclick="closeTraceModal()"
-                aria-label="Close"
-            >
-                ✕
-            </button>
+        <div id="traceModalBody"></div>
 
-            <div id="traceModalBody"></div>
-
-        </div>
     </div>
+
+</div>
 
 </body>
 </html>

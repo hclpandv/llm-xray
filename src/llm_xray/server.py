@@ -42,7 +42,10 @@ def generate(request: GenerationRequest):
 
 @app.post("/inspect")
 def inspect(request: GenerationRequest):
-    return model_manager.inspect_prompt(request.prompt)
+    return model_manager.inspect_prompt(
+        request.prompt,
+        request.max_new_tokens,
+    )
 
 app.mount(
     "/web",
