@@ -1,6 +1,8 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from transformers.modeling_utils import ALL_ATTENTION_FUNCTIONS
 
+from .attention import make_inspection_attention
 from .config import MODEL_NAME
 from .schemas import GenerationResponse, TokenInfo
 from .tracer import TransformerTracer
@@ -12,6 +14,10 @@ class ModelManager:
         self.tokenizer = None
         self.tracer = None
         self.device = self._detect_device()
+
+        self.attention_implementation_name = (
+            "llm_xray_inspection"
+        )
 
     @staticmethod
     def _detect_device() -> str:
@@ -27,7 +33,9 @@ class ModelManager:
         print(f"Loading model: {MODEL_NAME}")
         print(f"Device: {self.device}")
 
-        self.tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+        self.tokenizer = AutoTokenizer.from_pretrained(
+            MODEL_NAME
+        )
 
         self.model = AutoModelForCausalLM.from_pretrained(
             MODEL_NAME,
@@ -36,6 +44,7 @@ class ModelManager:
 
         self.model.to(self.device)
         self.model.eval()
+
         self.tracer = TransformerTracer(self.model)
         self.tracer.register()
 
@@ -49,7 +58,9 @@ class ModelManager:
 
         input_ids = encoded["input_ids"][0].tolist()
 
-        tokens = self.tokenizer.convert_ids_to_tokens(input_ids)
+        tokens = self.tokenizer.convert_ids_to_tokens(
+            input_ids
+        )
 
         return [
             TokenInfo(
@@ -69,7 +80,9 @@ class ModelManager:
     ) -> GenerationResponse:
 
         if self.model is None:
-            raise RuntimeError("Model has not been loaded.")
+            raise RuntimeError(
+                "Model has not been loaded."
+            )
 
         tokens = self.tokenize(prompt)
 
@@ -106,10 +119,35 @@ class ModelManager:
             generated_text=generated_text,
         )
 
+    def _enable_attention_inspection(self):
+        inspection_attention = make_inspection_attention(
+            self.tracer
+        )
+
+        ALL_ATTENTION_FUNCTIONS.register(
+            self.attention_implementation_name,
+            inspection_attention,
+        )
+
+        self.original_attention_implementation = (
+            self.model.config._attn_implementation
+        )
+
+        self.model.config._attn_implementation = (
+            self.attention_implementation_name
+        )
+
+    def _disable_attention_inspection(self):
+        self.model.config._attn_implementation = (
+            self.original_attention_implementation
+        )
+
     @torch.inference_mode()
     def inspect_prompt(self, prompt: str) -> dict:
         if self.model is None:
-            raise RuntimeError("Model has not been loaded.")
+            raise RuntimeError(
+                "Model has not been loaded."
+            )
 
         encoded = self.tokenizer(
             prompt,
@@ -133,34 +171,51 @@ class ModelManager:
 
         self.tracer.clear()
 
-        outputs = self.model(
-            **encoded,
-            output_hidden_states=True,
-        )
+        self._enable_attention_inspection()
+
+        try:
+            outputs = self.model(
+                **encoded,
+                output_hidden_states=True,
+            )
+        finally:
+            self._disable_attention_inspection()
 
         trace = self.tracer.get_trace()
 
         logits = outputs.logits
 
-        final_hidden_state = outputs.hidden_states[-1][:, -1, :]
+        final_hidden_state = outputs.hidden_states[-1][
+            :,
+            -1,
+            :,
+        ]
 
         config = self.model.config
 
-        tokenizer_class = type(self.tokenizer).__name__
+        tokenizer_class = type(
+            self.tokenizer
+        ).__name__
 
         tokenizer_model_type = None
 
         try:
             tokenizer_model_type = (
-                self.tokenizer.backend_tokenizer.model.__class__.__name__
+                self.tokenizer
+                .backend_tokenizer
+                .model
+                .__class__
+                .__name__
             )
         except AttributeError:
             pass
 
         tokenizer_vocab_size = len(self.tokenizer)
 
-        input_tokens = self.tokenizer.convert_ids_to_tokens(
-            input_ids[0]
+        input_tokens = (
+            self.tokenizer.convert_ids_to_tokens(
+                input_ids[0]
+            )
         )
 
         embedding_vectors = (
@@ -172,8 +227,14 @@ class ModelManager:
 
         tokens = []
 
-        for position, (token, token_id) in enumerate(
-            zip(input_tokens, input_ids[0].tolist())
+        for position, (
+            token,
+            token_id,
+        ) in enumerate(
+            zip(
+                input_tokens,
+                input_ids[0].tolist(),
+            )
         ):
             decoded = self.tokenizer.decode(
                 [token_id],
@@ -240,6 +301,69 @@ class ModelManager:
                                         1,
                                         input_ids.shape[1],
                                         layer.self_attn.v_proj.out_features,
+                                    ],
+                                },
+                                {
+                                    "name": "attention_scores",
+                                    "shape": [
+                                        1,
+                                        config.num_attention_heads,
+                                        input_ids.shape[1],
+                                        input_ids.shape[1],
+                                    ],
+                                },
+                                {
+                                    "name": "masked_scores",
+                                    "shape": [
+                                        1,
+                                        config.num_attention_heads,
+                                        input_ids.shape[1],
+                                        input_ids.shape[1],
+                                    ],
+                                },
+                                {
+                                    "name": "attention_weights",
+                                    "shape": [
+                                        1,
+                                        config.num_attention_heads,
+                                        input_ids.shape[1],
+                                        input_ids.shape[1],
+                                    ],
+                                },
+                                {
+                                    "name": "weighted_values",
+                                    "shape": [
+                                        1,
+                                        config.num_attention_heads,
+                                        input_ids.shape[1],
+                                        getattr(
+                                            layer.self_attn,
+                                            "head_dim",
+                                            config.hidden_size
+                                            // config.num_attention_heads,
+                                        ),
+                                    ],
+                                },
+                                {
+                                    "name": "attention_heads",
+                                    "shape": [
+                                        1,
+                                        input_ids.shape[1],
+                                        config.num_attention_heads,
+                                        getattr(
+                                            layer.self_attn,
+                                            "head_dim",
+                                            config.hidden_size
+                                            // config.num_attention_heads,
+                                        ),
+                                    ],
+                                },
+                                {
+                                    "name": "attention_output",
+                                    "shape": [
+                                        1,
+                                        input_ids.shape[1],
+                                        config.hidden_size,
                                     ],
                                 },
                                 {
@@ -317,7 +441,9 @@ class ModelManager:
 
             next_tokens.append(
                 {
-                    "token": self.tokenizer.decode([token_id]),
+                    "token": self.tokenizer.decode(
+                        [token_id]
+                    ),
                     "token_id": token_id,
                     "probability": probability.item(),
                 }
@@ -330,37 +456,32 @@ class ModelManager:
                 "hidden_size": config.hidden_size,
                 "vocab_size": config.vocab_size,
             },
-
             "tokenizer": {
                 "name": self.tokenizer.name_or_path,
                 "class": tokenizer_class,
                 "model_type": tokenizer_model_type,
                 "vocab_size": tokenizer_vocab_size,
             },
-
             "prompt": prompt,
-
             "tokens": tokens,
-
             "embedding": {
                 "matrix_shape": embedding_matrix_shape,
                 "dimension": embedding_matrix_shape[1],
-                "sequence_shape": list(embeddings.shape),
+                "sequence_shape": list(
+                    embeddings.shape
+                ),
             },
-
             "layers": layers,
-
             "execution_trace": trace,
-
             "final_hidden_state": {
                 "name": "final_hidden_state",
-                "shape": list(final_hidden_state.shape),
+                "shape": list(
+                    final_hidden_state.shape
+                ),
             },
-
             "logits": {
                 "name": "next_token_logits",
                 "shape": list(logits.shape),
             },
-
             "next_tokens": next_tokens,
         }

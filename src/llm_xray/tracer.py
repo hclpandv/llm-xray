@@ -24,6 +24,20 @@ class TransformerTracer:
         )
         return values[:16]
 
+    def record_tensor(self, name, tensor):
+        if not isinstance(tensor, torch.Tensor):
+            return
+
+        self.trace.append(
+            {
+                "name": name,
+                "shape": list(tensor.shape),
+                "dtype": str(tensor.dtype),
+                "device": str(tensor.device),
+                "preview": self._preview(tensor),
+            }
+        )
+
     def _record(self, name):
         def hook(module, inputs, outputs):
             tensor = outputs
@@ -31,18 +45,7 @@ class TransformerTracer:
             if isinstance(outputs, tuple):
                 tensor = outputs[0]
 
-            if not isinstance(tensor, torch.Tensor):
-                return
-
-            self.trace.append(
-                {
-                    "name": name,
-                    "shape": list(tensor.shape),
-                    "dtype": str(tensor.dtype),
-                    "device": str(tensor.device),
-                    "preview": self._preview(tensor),
-                }
-            )
+            self.record_tensor(name, tensor)
 
         return hook
 
@@ -51,20 +54,7 @@ class TransformerTracer:
             if not inputs:
                 return
 
-            tensor = inputs[0]
-
-            if not isinstance(tensor, torch.Tensor):
-                return
-
-            self.trace.append(
-                {
-                    "name": name,
-                    "shape": list(tensor.shape),
-                    "dtype": str(tensor.dtype),
-                    "device": str(tensor.device),
-                    "preview": self._preview(tensor),
-                }
-            )
+            self.record_tensor(name, inputs[0])
 
         return hook
 
@@ -72,7 +62,6 @@ class TransformerTracer:
         for layer_index, layer in enumerate(self.model.model.layers):
             prefix = f"layer_{layer_index}"
 
-            # Capture the actual tensor entering the decoder layer.
             self.handles.append(
                 layer.register_forward_pre_hook(
                     self._record_input(f"{prefix}.input")

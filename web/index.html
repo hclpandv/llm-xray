@@ -353,6 +353,10 @@
             background: #1a1e28;
         }
 
+        .graph-node.captured {
+            border-left: 3px solid #6978ff;
+        }
+
         .node-title {
             font-weight: 600;
             font-size: 13px;
@@ -1182,8 +1186,7 @@ function createTransformerGraph(
     graph.className =
         "transformer-graph";
 
-    const map =
-        {};
+    const map = {};
 
     for (const entry of entries) {
         map[shortOperationName(entry.name)] =
@@ -1244,24 +1247,128 @@ function createTransformerGraph(
         branch.className =
             "branch";
 
-        const node =
+        branch.appendChild(
             createTraceNode(
                 map[key],
                 label
-            );
-
-        branch.appendChild(node);
+            )
+        );
 
         branches.appendChild(branch);
     }
 
     graph.appendChild(branches);
 
+    /*
+     * Attention Scores
+     */
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    graph.appendChild(
+        createTraceNode(
+            map["attention_scores"],
+            "Attention Scores"
+        )
+    );
+
+    /*
+     * Causal mask
+     */
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    graph.appendChild(
+        createTraceNode(
+            map["masked_scores"],
+            "Causal Mask"
+        )
+    );
+
+    /*
+     * Softmax / Attention Weights
+     *
+     * The softmax operation itself is not a separately
+     * captured module, but the resulting tensor is real.
+     */
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    graph.appendChild(
+        createTraceNode(
+            map["attention_weights"],
+            "Attention Weights"
+        )
+    );
+
+    /*
+     * Weighted Values
+     */
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    graph.appendChild(
+        createTraceNode(
+            map["weighted_values"],
+            "Weighted Values"
+        )
+    );
+
+    /*
+     * Attention heads
+     */
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    graph.appendChild(
+        createTraceNode(
+            map["attention_heads"],
+            "Attention Heads"
+        )
+    );
+
+    /*
+     * Merge heads
+     *
+     * This is the reshape that turns:
+     *
+     * [batch, sequence, heads, head_dim]
+     *
+     * into:
+     *
+     * [batch, sequence, hidden_size]
+     */
+
     graph.appendChild(
         createConceptualNode(
-            "Attention",
-            "Q × K → softmax → V",
-            "Conceptual — attention internals are not separately captured yet"
+            "Merge Heads",
+            "reshape heads → hidden dimension",
+            "Tensor reshape performed inside the attention module"
+        )
+    );
+
+    graph.appendChild(
+        createArrow()
+    );
+
+    /*
+     * Merged attention output
+     */
+
+    graph.appendChild(
+        createTraceNode(
+            map["attention_output"],
+            "Merged Attention Output"
         )
     );
 
@@ -1285,14 +1392,16 @@ function createTransformerGraph(
     );
 
     /*
-     * Residual
+     * Attention residual
+     *
+     * This is still conceptual until Milestone 2.2.
      */
 
     graph.appendChild(
         createConceptualNode(
             "Residual Add",
             "attention output + layer input",
-            "Conceptual — residual addition is not separately captured"
+            "Conceptual — residual addition is not separately captured yet"
         )
     );
 
@@ -1354,7 +1463,7 @@ function createTransformerGraph(
         createConceptualNode(
             "SiLU × Gate",
             "activation(gate) × up",
-            "Conceptual — activation/multiplication is not separately captured"
+            "Conceptual — activation/multiplication is not separately captured yet"
         )
     );
 
@@ -1385,7 +1494,7 @@ function createTransformerGraph(
         createConceptualNode(
             "Residual Add",
             "MLP output + attention residual",
-            "Conceptual — residual addition is not separately captured"
+            "Conceptual — residual addition is not separately captured yet"
         )
     );
 
@@ -1393,11 +1502,15 @@ function createTransformerGraph(
         createArrow()
     );
 
+    /*
+     * Layer output
+     */
+
     graph.appendChild(
         createConceptualNode(
             `Layer ${layerIndex} output`,
             entries[entries.length - 1]?.shape || [],
-            "Conceptual endpoint"
+            "Conceptual endpoint — will become a captured tensor in a later milestone"
         )
     );
 
@@ -1405,7 +1518,6 @@ function createTransformerGraph(
 
     return wrapper;
 }
-
 
 /* =========================================================
    Trace node
@@ -1430,7 +1542,7 @@ function createTraceNode(
         document.createElement("div");
 
     node.className =
-        "graph-node";
+        "graph-node captured";
 
     node.innerHTML = `
         <div class="node-title">
