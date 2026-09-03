@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLM-Xray</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<div class="container">
+  <header>
+  <svg class="brand-mark" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="4" width="36" height="36" rx="4"
+          stroke="currentColor" stroke-width="1.4" opacity=".35"/>
+    <path d="M10 30 L16 18 L21 24 L26 12 L34 30"
+          stroke="currentColor" stroke-width="1.6"
+          stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="26" cy="12" r="1.8" fill="currentColor"/>
+  </svg>
+
+  <div>
+    <h1>LLM-Xray</h1>
+    <div class="subtitle" id="subtitle"></div>
+    <div class="status-pill"><span class="dot"></span> pre-recorded inspection</div>
+  </div>
+</header>
+
+  <section class="card">
+    <h2>Inspect prompt</h2>
+    <textarea id="prompt" readonly></textarea>
+    <div class="prompt-footer">
+      <div id="status" class="status">Loading recorded inspection…</div>
+      <button id="inspectButton">Replay inspection</button>
+    </div>
+  </section>
+
+  <section id="modelCard" class="card hidden"></section>
+  <section id="tokenCard" class="card hidden"></section>
+  <section id="pipelineCard" class="card hidden"></section>
+  <section id="executionCard" class="card hidden"></section>
+  <section id="probabilityCard" class="card hidden"></section>
+  <section id="generationCard" class="card hidden"></section>
+</div>
+
+<div id="traceModal" class="modal-backdrop" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true">
+    <div class="modal-head">
+      <div><h2 id="modalTitle"></h2><div id="modalRaw" class="status"></div></div>
+      <button class="close" id="modalClose">×</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+<script src="./config.js"></script>
+<script src="./app.js"></script>
+</body>
+</html>
