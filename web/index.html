@@ -828,6 +828,53 @@
             word-break: break-all;
         }
 
+        .op-description {
+            margin-top: 16px !important;
+            color: var(--text-dim);
+            font-size: 13.5px;
+            line-height: 1.65;
+            max-width: 62ch;
+        }
+
+        .shape-breakdown {
+            display: flex;
+            align-items: stretch;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .shape-dim {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 10px 14px;
+            background: var(--panel-raised);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            min-width: 84px;
+        }
+
+        .shape-dim strong {
+            font-family: var(--font-mono);
+            font-size: 15px;
+            color: var(--trace);
+        }
+
+        .shape-dim span {
+            font-size: 10.5px;
+            color: var(--text-faint);
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .shape-dim-sep {
+            display: flex;
+            align-items: center;
+            color: var(--text-faint);
+            font-size: 13px;
+        }
+
         .trace-modal-meta {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -853,6 +900,14 @@
             font-family: var(--font-mono);
             font-size: 12.5px;
             color: var(--text);
+        }
+
+        .trace-modal-meta p,
+        .tensor-stat p {
+            margin: 6px 0 0;
+            font-size: 11px;
+            line-height: 1.5;
+            color: var(--text-faint);
         }
 
         .trace-modal-section { margin-top: 22px; }
@@ -890,6 +945,63 @@
             color: var(--trace);
         }
 
+        .values-note {
+            color: var(--text-faint);
+            font-size: 11.5px;
+            margin-bottom: 12px;
+        }
+
+        .tensor-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding: 4px;
+            background: var(--ink);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+        }
+
+        .tensor-bar-row {
+            display: grid;
+            grid-template-columns: 22px 1fr 66px;
+            align-items: center;
+            gap: 10px;
+            padding: 2px 6px;
+        }
+
+        .tensor-bar-index {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-faint);
+            text-align: right;
+        }
+
+        .tensor-bar-track {
+            height: 12px;
+            background: var(--panel-raised);
+            border: 1px solid var(--line);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .tensor-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+        }
+
+        .tensor-bar-fill.pos { background: var(--trace); }
+        .tensor-bar-fill.neg { background: var(--danger); }
+
+        .tensor-bar-value {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-dim);
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
         .trace-modal pre {
             margin: 0;
             padding: 16px;
@@ -908,6 +1020,7 @@
             .trace-modal { padding: 12px; }
             .trace-modal-content { padding: 22px; }
             .tensor-stats { grid-template-columns: repeat(2, 1fr); }
+            .tensor-bar-row { grid-template-columns: 18px 1fr 54px; }
         }
     </style>
 </head>
@@ -2070,6 +2183,174 @@ function createArrow() {
 
 
 /* =========================================================
+   Plain-language glossary of each operation
+
+   Keyed by the short operation name (see shortOperationName).
+   Each entry explains, in one or two sentences, what actually
+   happens to the numbers at this step — and what each axis of
+   the tensor represents, so the shape isn't just "3 numbers".
+   ========================================================= */
+
+const OPERATION_INFO = {
+
+    input: {
+        text: "The hidden state entering this layer. For layer 0 this is the token embeddings; for later layers it's the previous layer's output, unchanged so far.",
+        dims: ["sequence position", "hidden size"]
+    },
+
+    input_layernorm: {
+        text: "RMSNorm rescales every position's vector to a consistent magnitude before attention, so layers deeper in the model see inputs on a similar scale regardless of how large earlier activations grew.",
+        dims: ["sequence position", "hidden size"]
+    },
+
+    q_proj: {
+        text: "A learned projection turns each position's vector into a query — a description of what that position is looking for in the rest of the sequence.",
+        dims: ["sequence position", "query dimension"]
+    },
+
+    k_proj: {
+        text: "A learned projection turns each position's vector into a key — what that position has to offer if another position queries it.",
+        dims: ["sequence position", "key dimension"]
+    },
+
+    v_proj: {
+        text: "A learned projection turns each position's vector into a value — the actual content that gets mixed forward if this position ends up being attended to.",
+        dims: ["sequence position", "value dimension"]
+    },
+
+    attention_scores: {
+        text: "Every query is compared against every key with a dot product, giving a raw compatibility score between each pair of positions, computed separately per attention head.",
+        dims: ["attention head", "query position", "key position"]
+    },
+
+    masked_scores: {
+        text: "A causal mask blocks each position from seeing positions that come after it in the sequence — token n can only attend to tokens 0 through n.",
+        dims: ["attention head", "query position", "key position"]
+    },
+
+    attention_weights: {
+        text: "Softmax converts the masked scores into probabilities. For each position, its attention weights over everything it's allowed to see sum to 1.",
+        dims: ["attention head", "query position", "key position"]
+    },
+
+    weighted_values: {
+        text: "Each position's output is a weighted blend of the value vectors it attends to, using the attention weights above as the mixing ratios.",
+        dims: ["attention head", "sequence position", "value dimension"]
+    },
+
+    attention_heads: {
+        text: "The blended outputs from every attention head, still kept separate — each head learns to attend to different kinds of relationships between tokens.",
+        dims: ["attention head", "sequence position", "value dimension"]
+    },
+
+    attention_output: {
+        text: "All attention heads are concatenated back together into a single vector per position.",
+        dims: ["sequence position", "hidden size"]
+    },
+
+    o_proj: {
+        text: "A final learned projection mixes information across heads before it re-enters the residual stream.",
+        dims: ["sequence position", "hidden size"]
+    },
+
+    attention_residual: {
+        text: "The attention output is added back onto this layer's input. This residual connection lets the layer refine the representation instead of replacing it outright.",
+        dims: ["sequence position", "hidden size"]
+    },
+
+    post_attention_layernorm: {
+        text: "A second RMSNorm rescales the residual stream before it enters the MLP block.",
+        dims: ["sequence position", "hidden size"]
+    },
+
+    gate_proj: {
+        text: "A learned projection produces the gate values — signals that will decide how much of each MLP feature is allowed through.",
+        dims: ["sequence position", "intermediate size"]
+    },
+
+    up_proj: {
+        text: "A learned projection expands each position's vector into a larger intermediate space, giving the MLP more room to compute in.",
+        dims: ["sequence position", "intermediate size"]
+    },
+
+    activation: {
+        text: "The SiLU activation is applied to the gate values, smoothly deciding how strongly each intermediate feature should turn on, rather than a hard on/off cutoff.",
+        dims: ["sequence position", "intermediate size"]
+    },
+
+    gated_output: {
+        text: "The activated gate is multiplied elementwise with the up-projection, so the gate controls how much of each feature actually passes through.",
+        dims: ["sequence position", "intermediate size"]
+    },
+
+    down_proj: {
+        text: "A learned projection compresses the intermediate representation back down to the model's hidden size.",
+        dims: ["sequence position", "hidden size"]
+    },
+
+    mlp_residual: {
+        text: "The MLP output is added back onto the residual stream — the same pattern used after attention.",
+        dims: ["sequence position", "hidden size"]
+    },
+
+    output: {
+        text: "The final hidden state produced by this layer. It becomes the next layer's input, or — for the last layer — feeds into the final RMSNorm and LM head.",
+        dims: ["sequence position", "hidden size"]
+    }
+
+};
+
+/* =========================================================
+   Line up semantic dimension labels (defined without a batch
+   axis, since that's what's meaningful about each op) against
+   whatever rank the tensor actually captured at. The batch
+   axis, when present, is always leftmost, so labels align
+   from the right and any extra leading axis is called "batch".
+   ========================================================= */
+
+function alignDimLabels(canonical, shapeLength) {
+
+    if (!canonical) {
+        return null;
+    }
+
+    const diff =
+        shapeLength - canonical.length;
+
+    if (diff === 0) {
+        return canonical;
+    }
+
+    if (diff > 0) {
+
+        const leading =
+            diff === 1
+                ? ["batch"]
+                : Array.from(
+                    { length: diff },
+                    (_, i) => `dimension ${i}`
+                );
+
+        return [...leading, ...canonical];
+
+    }
+
+    // Tensor has fewer dimensions than the canonical
+    // description (e.g. an unbatched trace) — keep the
+    // trailing, most meaningful labels.
+    return canonical.slice(canonical.length - shapeLength);
+}
+
+
+const STAT_CAPTIONS = {
+    Min: "smallest value anywhere in the tensor",
+    Max: "largest value anywhere in the tensor",
+    Mean: "average value — near zero usually means positive and negative activations are balanced",
+    Std: "how spread out values are around the mean; larger means more variation position to position"
+};
+
+
+/* =========================================================
    Trace detail panel
    ========================================================= */
 
@@ -2092,6 +2373,63 @@ function openTraceModal(entry, label) {
 
     const stats = entry.stats;
 
+    const opKey =
+        shortOperationName(entry.name);
+
+    const info =
+        OPERATION_INFO[opKey] || {
+            text: "A tensor captured at this point in the forward pass.",
+            dims: null
+        };
+
+    const shapeArray =
+        Array.isArray(entry.shape)
+            ? entry.shape
+            : [];
+
+    const dimLabels =
+        alignDimLabels(
+            info.dims,
+            shapeArray.length
+        );
+
+    const shapeChips =
+        shapeArray
+            .map((size, index) => {
+
+                const dimLabel =
+                    dimLabels && dimLabels[index]
+                        ? dimLabels[index]
+                        : `dimension ${index}`;
+
+                return `
+
+                    <div class="shape-dim">
+                        <strong>${size.toLocaleString()}</strong>
+                        <span>${escapeHtml(dimLabel)}</span>
+                    </div>
+                `;
+
+            })
+            .join(
+                `<div class="shape-dim-sep">×</div>`
+            );
+
+    const previewValues =
+        Array.isArray(entry.preview)
+            ? entry.preview
+            : [];
+
+    const lastDim =
+        shapeArray.length > 0
+            ? shapeArray[shapeArray.length - 1]
+            : null;
+
+    const valuesNote =
+        lastDim && lastDim > previewValues.length
+            ? `Showing the first ${previewValues.length} of ${lastDim.toLocaleString()} values along the last dimension — not the whole tensor.`
+            : `Showing all ${previewValues.length} values along the last dimension.`;
+
     body.innerHTML = `
 
         <div class="trace-modal-title">
@@ -2102,20 +2440,28 @@ function openTraceModal(entry, label) {
             ${escapeHtml(entry.name)}
         </div>
 
-        <div class="trace-modal-meta">
+        <div class="trace-modal-section op-description">
+            ${escapeHtml(info.text)}
+        </div>
 
-            <div>
-                <span>Shape</span>
-                <strong>
-                    ${formatShape(entry.shape)}
-                </strong>
+        <div class="trace-modal-section">
+
+            <h4>Shape — what each dimension means</h4>
+
+            <div class="shape-breakdown">
+                ${shapeChips}
             </div>
+
+        </div>
+
+        <div class="trace-modal-meta">
 
             <div>
                 <span>dtype</span>
                 <strong>
                     ${escapeHtml(entry.dtype)}
                 </strong>
+                <p>numeric precision used to store this tensor</p>
             </div>
 
             <div>
@@ -2123,6 +2469,15 @@ function openTraceModal(entry, label) {
                 <strong>
                     ${escapeHtml(entry.device)}
                 </strong>
+                <p>hardware this operation ran on</p>
+            </div>
+
+            <div>
+                <span>full shape</span>
+                <strong>
+                    ${formatShape(entry.shape)}
+                </strong>
+                <p>raw dimensions, in order</p>
             </div>
 
         </div>
@@ -2132,37 +2487,30 @@ function openTraceModal(entry, label) {
                 ? `
                     <div class="trace-modal-section">
 
-                        <h4>Statistics</h4>
+                        <h4>Statistics across the whole tensor</h4>
 
                         <div class="tensor-stats">
 
-                            <div class="tensor-stat">
-                                <span>Min</span>
-                                <strong>
-                                    ${formatNumber(stats.min)}
-                                </strong>
-                            </div>
+                            ${
+                                [
+                                    ["Min", stats.min],
+                                    ["Max", stats.max],
+                                    ["Mean", stats.mean],
+                                    ["Std", stats.std]
+                                ]
+                                    .map(([name, value]) => `
 
-                            <div class="tensor-stat">
-                                <span>Max</span>
-                                <strong>
-                                    ${formatNumber(stats.max)}
-                                </strong>
-                            </div>
+                                        <div class="tensor-stat">
+                                            <span>${name}</span>
+                                            <strong>
+                                                ${formatNumber(value)}
+                                            </strong>
+                                            <p>${STAT_CAPTIONS[name]}</p>
+                                        </div>
 
-                            <div class="tensor-stat">
-                                <span>Mean</span>
-                                <strong>
-                                    ${formatNumber(stats.mean)}
-                                </strong>
-                            </div>
-
-                            <div class="tensor-stat">
-                                <span>Std</span>
-                                <strong>
-                                    ${formatNumber(stats.std)}
-                                </strong>
-                            </div>
+                                    `)
+                                    .join("")
+                            }
 
                         </div>
 
@@ -2173,17 +2521,15 @@ function openTraceModal(entry, label) {
 
         <div class="trace-modal-section">
 
-            <h4>
-                Tensor preview — first 16 values
-            </h4>
+            <h4>Sample values</h4>
 
-            <pre>${escapeHtml(
-                JSON.stringify(
-                    entry.preview,
-                    null,
-                    2
-                )
-            )}</pre>
+            <div class="values-note">
+                ${valuesNote}
+            </div>
+
+            <div class="tensor-bars">
+                ${renderTensorBars(previewValues)}
+            </div>
 
         </div>
     `;
@@ -2191,6 +2537,70 @@ function openTraceModal(entry, label) {
     modal.classList.add("open");
 
     document.body.style.overflow = "hidden";
+}
+
+
+/* =========================================================
+   Render a small bidirectional bar per value, so the sample
+   values read as a shape at a glance instead of a bare list
+   of numbers.
+   ========================================================= */
+
+function renderTensorBars(values) {
+
+    if (!values || values.length === 0) {
+
+        return `<div class="status">No sample values were captured for this tensor.</div>`;
+
+    }
+
+    const maxAbs =
+        Math.max(
+            ...values.map(
+                value => Math.abs(Number(value))
+            ),
+            1e-9
+        );
+
+    return values
+        .map((value, index) => {
+
+            const number =
+                Number(value);
+
+            const pct =
+                Math.min(
+                    100,
+                    (Math.abs(number) / maxAbs) * 100
+                );
+
+            const sign =
+                number >= 0 ? "pos" : "neg";
+
+            return `
+
+                <div class="tensor-bar-row">
+
+                    <span class="tensor-bar-index">
+                        ${index}
+                    </span>
+
+                    <div class="tensor-bar-track">
+                        <div
+                            class="tensor-bar-fill ${sign}"
+                            style="width:${pct}%"
+                        ></div>
+                    </div>
+
+                    <span class="tensor-bar-value">
+                        ${number.toFixed(4)}
+                    </span>
+
+                </div>
+            `;
+
+        })
+        .join("");
 }
 
 
