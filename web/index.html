@@ -769,13 +769,15 @@
         }
 
         .gen-token {
+            display: inline-block;
             border-radius: 3px;
             animation: tokenAccept 900ms ease forwards;
         }
 
         @keyframes tokenAccept {
-            0%   { background: rgba(240,169,68,.45); }
-            100% { background: rgba(240,169,68,0); }
+            0%   { background: rgba(240,169,68,.55); transform: scale(1.18); }
+            35%  { background: rgba(240,169,68,.45); transform: scale(1); }
+            100% { background: rgba(240,169,68,0); transform: scale(1); }
         }
 
         .gen-cursor {
@@ -792,10 +794,267 @@
             50% { opacity: 0; }
         }
 
+        .replay-button {
+            margin-left: auto;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: transparent;
+            border: 1px solid var(--line-strong);
+            color: var(--text-dim);
+            border-radius: var(--radius-sm);
+            padding: 6px 12px;
+            font-family: var(--font-ui);
+            font-size: 11.5px;
+            font-weight: 500;
+            letter-spacing: 0;
+            cursor: pointer;
+            transition: border-color .15s ease, color .15s ease, background .15s ease;
+        }
+
+        .replay-button svg {
+            width: 12px;
+            height: 12px;
+        }
+
+        .replay-button:hover:not(:disabled) {
+            border-color: var(--signal-dim);
+            color: var(--signal);
+            background: rgba(240,169,68,.06);
+        }
+
+        .replay-button:disabled {
+            opacity: .45;
+            cursor: progress;
+        }
+
+        .replay-button:disabled svg {
+            animation: spin 0.9s linear infinite;
+        }
+
+        .gen-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 14px;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-faint);
+        }
+
+        .gen-speed-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .gen-speed-label input[type="range"] {
+            width: 110px;
+            accent-color: var(--signal);
+        }
+
+        #genSpeedValue {
+            color: var(--text-dim);
+            min-width: 34px;
+        }
+
+        .gen-pause-hint {
+            color: var(--text-faint);
+            opacity: .8;
+        }
+
+        .gen-loop {
+            position: relative;
+        }
+
+        .gen-paused-badge {
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            letter-spacing: .04em;
+            color: var(--trace);
+            background: rgba(72,201,208,.1);
+            border: 1px solid rgba(72,201,208,.35);
+            border-radius: var(--radius-sm);
+            padding: 3px 8px;
+            opacity: 0;
+            transition: opacity .15s ease;
+            pointer-events: none;
+        }
+
+        .gen-loop.paused .gen-paused-badge {
+            opacity: 1;
+        }
+
+        .gen-loop.paused .gen-node.active {
+            box-shadow: 0 0 0 3px rgba(72,201,208,.18);
+            border-color: var(--trace);
+        }
+
+        .gen-token-ghost {
+            display: inline-block;
+            border: 1px dashed var(--signal);
+            border-radius: 3px;
+            padding: 0 2px;
+            margin: 0 1px;
+            color: var(--text-faint);
+            animation: ghostPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes ghostPulse {
+            0%, 100% { opacity: .5; }
+            50%      { opacity: .95; }
+        }
+
         .generation-empty {
             color: var(--text-faint);
             font-family: var(--font-mono);
             font-size: 12px;
+        }
+
+        /* ---- autoregressive loop diagram ---- */
+
+        .gen-loop {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0;
+            margin-bottom: 18px;
+            padding: 16px 18px;
+            background: var(--ink);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+        }
+
+        .gen-node {
+            flex: 0 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            padding: 9px 16px;
+            min-width: 92px;
+            border: 1px solid var(--line-strong);
+            border-radius: var(--radius-sm);
+            background: var(--panel-raised);
+            text-align: center;
+            transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
+        }
+
+        .gen-node-label {
+            font-family: var(--font-mono);
+            color: var(--text-faint);
+            font-size: 9.5px;
+            letter-spacing: .06em;
+            text-transform: uppercase;
+        }
+
+        .gen-node-value {
+            font-family: var(--font-mono);
+            color: var(--text);
+            font-size: 12.5px;
+            font-weight: 600;
+            min-height: 1.2em;
+            max-width: 140px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .gen-node.active {
+            border-color: var(--signal);
+            background: rgba(240,169,68,.09);
+            box-shadow: 0 0 0 3px rgba(240,169,68,.13);
+        }
+
+        .gen-arrow {
+            flex: 1 1 auto;
+            min-width: 24px;
+            height: 2px;
+            margin: 0 6px;
+            position: relative;
+            background: var(--line-strong);
+        }
+
+        .gen-arrow::after {
+            content: "";
+            position: absolute;
+            right: -1px;
+            top: 50%;
+            width: 6px;
+            height: 6px;
+            border-right: 2px solid var(--line-strong);
+            border-bottom: 2px solid var(--line-strong);
+            transform: translateY(-50%) rotate(-45deg);
+        }
+
+        .gen-arrow.flowing { background: var(--signal-dim); }
+        .gen-arrow.flowing::after { border-color: var(--signal); }
+
+        .gen-arrow.flowing::before {
+            content: "";
+            position: absolute;
+            top: -3px;
+            left: -4px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--signal);
+            box-shadow: 0 0 6px 1px rgba(240,169,68,.7);
+            animation: genFlowMove .55s ease forwards;
+        }
+
+        @keyframes genFlowMove {
+            0%   { left: -4px; opacity: 0; }
+            18%  { opacity: 1; }
+            100% { left: calc(100% - 4px); opacity: 0; }
+        }
+
+        .gen-loopback {
+            flex: 1 1 100%;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 14px;
+            padding-top: 12px;
+            border-top: 1px dashed var(--line);
+            font-family: var(--font-mono);
+            font-size: 11.5px;
+            font-weight: 500;
+            color: var(--text-faint);
+            opacity: 0;
+            transform: translateY(-2px);
+            transition: opacity .15s ease, transform .15s ease, color .15s ease, border-color .15s ease;
+        }
+
+        .gen-loopback.show {
+            opacity: 1;
+            transform: translateY(0);
+            color: var(--signal);
+            border-top-color: var(--signal-dim);
+        }
+
+        .gen-loopback-icon {
+            font-size: 13px;
+            line-height: 1;
+        }
+
+        .gen-context-box {
+            border: 1px solid transparent;
+            border-radius: var(--radius-sm);
+            padding: 2px 4px;
+            margin: -2px -4px;
+            transition: border-color .25s ease, box-shadow .25s ease, background .25s ease;
+        }
+
+        .gen-context-box.reading {
+            border-color: var(--trace);
+            box-shadow: 0 0 0 3px rgba(72,201,208,.1);
+            background: rgba(72,201,208,.04);
         }
 
         /* =========================================================
@@ -1238,11 +1497,40 @@
 
     <section id="generationCard" class="card" style="display:none">
 
-        <h2>5. Generation</h2>
+        <h2>
+            5. Generation
+            <button id="replayGenerationButton" class="replay-button" type="button" onclick="replayGeneration()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                Replay generation
+            </button>
+        </h2>
 
         <div class="generation-intro">
             The model generates one token at a time: it looks at everything so far,
             picks the most likely next token, appends it, and repeats.
+        </div>
+
+        <div class="gen-controls">
+
+            <label class="gen-speed-label" for="genSpeedSlider">
+                Speed
+                <input
+                    type="range"
+                    id="genSpeedSlider"
+                    min="0.5"
+                    max="2"
+                    step="0.1"
+                    value="1"
+                    oninput="updateGenSpeedLabel()"
+                >
+                <span id="genSpeedValue">1.0×</span>
+            </label>
+
+            <span class="gen-pause-hint">Hover the diagram to pause</span>
+
         </div>
 
         <div class="generation-stage">
@@ -1252,7 +1540,39 @@
                 <span id="generationStepProb" class="generation-step-prob"></span>
             </div>
 
-            <div id="generatedText" class="generated-text"></div>
+            <div class="gen-loop" id="genLoopDiagram">
+
+                <span class="gen-paused-badge">⏸ paused</span>
+
+                <div class="gen-node" id="genNodeContext">
+                    <span class="gen-node-label">Context so far</span>
+                    <span class="gen-node-value" id="genNodeContextValue">—</span>
+                </div>
+
+                <div class="gen-arrow" id="genArrowIn"></div>
+
+                <div class="gen-node" id="genNodeModel">
+                    <span class="gen-node-label">Model</span>
+                    <span class="gen-node-value" id="genNodeModelValue">idle</span>
+                </div>
+
+                <div class="gen-arrow" id="genArrowOut"></div>
+
+                <div class="gen-node" id="genNodeToken">
+                    <span class="gen-node-label">Predicted token</span>
+                    <span class="gen-node-value" id="genNodeTokenValue">—</span>
+                </div>
+
+                <div class="gen-loopback" id="genLoopback">
+                    <span class="gen-loopback-icon">↩</span>
+                    <span>token appended — fed back in as part of the next context</span>
+                </div>
+
+            </div>
+
+            <div class="gen-context-box" id="genContextBox">
+                <div id="generatedText" class="generated-text"></div>
+            </div>
 
         </div>
 
@@ -1261,6 +1581,71 @@
 </div>
 
 <script>
+
+/* =========================================================
+   Generation animation controls (speed + hover-to-pause)
+   ========================================================= */
+
+let genPaused = false;
+
+function getGenSpeedMultiplier() {
+
+    const slider =
+        document.getElementById("genSpeedSlider");
+
+    if (!slider) {
+        return 1;
+    }
+
+    return Number(slider.value) || 1;
+}
+
+function updateGenSpeedLabel() {
+
+    const slider =
+        document.getElementById("genSpeedSlider");
+
+    const label =
+        document.getElementById("genSpeedValue");
+
+    if (slider && label) {
+        label.textContent =
+            `${Number(slider.value).toFixed(1)}×`;
+    }
+}
+
+// waits `baseMs` of "animation time", scaled by the speed slider,
+// and fully frozen while the diagram is hovered (paused) — used
+// in place of a plain sleep() throughout renderGeneration
+function genWait(baseMs) {
+
+    return new Promise(resolve => {
+
+        let remaining = baseMs;
+        const tickMs = 40;
+
+        function tick() {
+
+            if (remaining <= 0) {
+                resolve();
+                return;
+            }
+
+            setTimeout(() => {
+
+                if (!genPaused) {
+                    remaining -= tickMs * getGenSpeedMultiplier();
+                }
+
+                tick();
+
+            }, tickMs);
+        }
+
+        tick();
+    });
+}
+
 
 /* =========================================================
    Main inspection
@@ -1310,6 +1695,8 @@ async function inspectModel() {
         const data =
             await response.json();
 
+        window.__lastInspectionData = data;
+
         renderModel(data);
         renderTokens(data);
         renderPipeline(data);
@@ -1329,6 +1716,37 @@ async function inspectModel() {
 
         status.textContent =
             `Error: ${error.message}`;
+
+    } finally {
+
+        button.disabled = false;
+
+    }
+}
+
+
+// re-runs the generation animation from the last response,
+// without re-running the model — lets the user re-watch the
+// loop without scrolling back up to the Inspect button
+async function replayGeneration() {
+
+    const data =
+        window.__lastInspectionData;
+
+    if (!data) {
+        return;
+    }
+
+    const button =
+        document.getElementById(
+            "replayGenerationButton"
+        );
+
+    button.disabled = true;
+
+    try {
+
+        await renderGeneration(data);
 
     } finally {
 
@@ -2917,6 +3335,56 @@ async function renderGeneration(data) {
             "generatedText"
         );
 
+    const contextBox =
+        document.getElementById(
+            "genContextBox"
+        );
+
+    const nodeContext =
+        document.getElementById(
+            "genNodeContext"
+        );
+
+    const nodeContextValue =
+        document.getElementById(
+            "genNodeContextValue"
+        );
+
+    const nodeModel =
+        document.getElementById(
+            "genNodeModel"
+        );
+
+    const nodeModelValue =
+        document.getElementById(
+            "genNodeModelValue"
+        );
+
+    const nodeToken =
+        document.getElementById(
+            "genNodeToken"
+        );
+
+    const nodeTokenValue =
+        document.getElementById(
+            "genNodeTokenValue"
+        );
+
+    const arrowIn =
+        document.getElementById(
+            "genArrowIn"
+        );
+
+    const arrowOut =
+        document.getElementById(
+            "genArrowOut"
+        );
+
+    const loopback =
+        document.getElementById(
+            "genLoopback"
+        );
+
     card.style.display =
         "block";
 
@@ -2929,6 +3397,15 @@ async function renderGeneration(data) {
     stepProb.classList.remove(
         "show"
     );
+
+    nodeContext.classList.remove("active");
+    nodeModel.classList.remove("active");
+    nodeToken.classList.remove("active");
+    contextBox.classList.remove("reading");
+    loopback.classList.remove("show");
+    nodeContextValue.textContent = "—";
+    nodeModelValue.textContent = "idle";
+    nodeTokenValue.textContent = "—";
 
     const steps =
         Array.isArray(data.generation_steps)
@@ -2962,6 +3439,10 @@ async function renderGeneration(data) {
     const total =
         steps.length;
 
+    // running text of everything accepted so far, used to show
+    // the model "re-reading" its own output as input each step
+    let contextSoFar = "";
+
     for (
         let i = 0;
         i < total;
@@ -2977,12 +3458,62 @@ async function renderGeneration(data) {
         stepCount.textContent =
             `Token ${i + 1} of ${total}`;
 
+        // --- phase 1: the whole sequence so far is fed back in as context ---
+
+        nodeContextValue.textContent =
+            truncateForNode(contextSoFar) || "(prompt)";
+
+        nodeContext.classList.add("active");
+        contextBox.classList.add("reading");
+
+        flowArrow(arrowIn);
+
+        await genWait(260);
+
+        // --- phase 2: the model reads it and computes ---
+
+        nodeContext.classList.remove("active");
+        contextBox.classList.remove("reading");
+        nodeModel.classList.add("active");
+        nodeModelValue.textContent = "computing…";
+
+        await genWait(300);
+
+        // --- phase 3: the model outputs a next-token prediction ---
+
+        flowArrow(arrowOut);
+
+        nodeModel.classList.remove("active");
+        nodeModelValue.textContent = "idle";
+        nodeToken.classList.add("active");
+        nodeTokenValue.textContent = step.token;
+
         stepProb.textContent =
             `${(probability * 100).toFixed(1)}% confidence`;
 
         stepProb.classList.add(
             "show"
         );
+
+        const ghostSpan =
+            document.createElement("span");
+
+        ghostSpan.className =
+            "gen-token-ghost";
+
+        ghostSpan.textContent =
+            step.token;
+
+        textEl.insertBefore(
+            ghostSpan,
+            cursor
+        );
+
+        await genWait(420);
+
+        // --- phase 4: that token is appended, and fed back as context ---
+
+        ghostSpan.remove();
 
         const tokenSpan =
             document.createElement("span");
@@ -2998,17 +3529,28 @@ async function renderGeneration(data) {
             cursor
         );
 
-        await sleep(450);
+        contextSoFar += step.token;
+
+        nodeToken.classList.remove("active");
+        loopback.classList.add("show");
+
+        await genWait(480);
 
         stepProb.classList.remove(
             "show"
         );
 
-        await sleep(150);
+        loopback.classList.remove("show");
+
+        await genWait(40);
 
     }
 
     cursor.remove();
+
+    nodeContextValue.textContent = truncateForNode(contextSoFar);
+    nodeModelValue.textContent = "idle";
+    nodeTokenValue.textContent = "—";
 
     stepCount.textContent =
         `Generated ${total} tokens`;
@@ -3017,6 +3559,36 @@ async function renderGeneration(data) {
         "";
 
 }
+
+
+// restarts the "flowing dot" animation on a loop-diagram arrow
+// even if it was still mid-animation from the previous step
+function flowArrow(arrowEl) {
+
+    arrowEl.classList.remove("flowing");
+
+    // force reflow so the animation restarts from its 0% keyframe
+    void arrowEl.offsetWidth;
+
+    arrowEl.classList.add("flowing");
+}
+
+
+// short, ellipsis-truncated preview of the running context,
+// so the "Context so far" node stays a fixed, readable width
+function truncateForNode(text, max = 22) {
+
+    if (!text) {
+        return "";
+    }
+
+    if (text.length <= max) {
+        return text;
+    }
+
+    return `…${text.slice(-max)}`;
+}
+
 
 
 /* =========================================================
@@ -3103,6 +3675,32 @@ function escapeHtml(value) {
             "&#039;"
         );
 }
+
+
+/* =========================================================
+   Wire up hover-to-pause on the generation loop diagram
+   ========================================================= */
+
+(function initGenerationControls() {
+
+    const diagram =
+        document.getElementById("genLoopDiagram");
+
+    if (!diagram) {
+        return;
+    }
+
+    diagram.addEventListener("mouseenter", () => {
+        genPaused = true;
+        diagram.classList.add("paused");
+    });
+
+    diagram.addEventListener("mouseleave", () => {
+        genPaused = false;
+        diagram.classList.remove("paused");
+    });
+
+})();
 
 </script>
 
