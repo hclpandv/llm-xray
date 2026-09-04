@@ -4,26 +4,25 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LLM-Xray</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
 <div class="container">
   <header>
-  <svg class="brand-mark" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="4" y="4" width="36" height="36" rx="4"
-          stroke="currentColor" stroke-width="1.4" opacity=".35"/>
-    <path d="M10 30 L16 18 L21 24 L26 12 L34 30"
-          stroke="currentColor" stroke-width="1.6"
-          stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="26" cy="12" r="1.8" fill="currentColor"/>
-  </svg>
-
-  <div>
-    <h1>LLM-Xray</h1>
-    <div class="subtitle" id="subtitle"></div>
-    <div class="status-pill"><span class="dot"></span> pre-recorded inspection</div>
-  </div>
-</header>
+    <svg class="brand-mark" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="4" y="4" width="36" height="36" rx="4" stroke="currentColor" stroke-width="1.4" opacity=".35"/>
+            <path d="M10 30 L16 18 L21 24 L26 12 L34 30" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle cx="26" cy="12" r="1.8" fill="currentColor"/>
+    </svg>
+    <div>
+      <h1>LLM-Xray</h1>
+      <div class="subtitle" id="subtitle"></div>
+      <div class="status-pill"><span class="dot"></span> pre-recorded inspection</div>
+    </div>
+  </header>
 
   <section class="card">
     <h2>Inspect prompt</h2>
@@ -39,7 +38,60 @@
   <section id="pipelineCard" class="card hidden"></section>
   <section id="executionCard" class="card hidden"></section>
   <section id="probabilityCard" class="card hidden"></section>
-  <section id="generationCard" class="card hidden"></section>
+  <section id="generationCard" class="card hidden">
+    <h2>
+      5. Generation
+      <button id="replayGenerationButton" class="replay-button" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="1 4 1 10 7 10"></polyline>
+          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+        </svg>
+        Replay generation
+      </button>
+    </h2>
+    <div class="generation-intro">
+      The model generates one token at a time: it looks at everything so far,
+      picks the most likely next token, appends it, and repeats.
+    </div>
+    <div class="gen-controls">
+      <label class="gen-speed-label" for="genSpeedSlider">
+        Speed
+        <input type="range" id="genSpeedSlider" min="0.5" max="2" step="0.1" value="1">
+        <span id="genSpeedValue">1.0×</span>
+      </label>
+      <span class="gen-pause-hint">Hover the diagram to pause</span>
+    </div>
+    <div class="generation-stage">
+      <div class="generation-stage-meta">
+        <span id="generationStepCount"></span>
+        <span id="generationStepProb" class="generation-step-prob"></span>
+      </div>
+      <div class="gen-loop" id="genLoopDiagram">
+        <span class="gen-paused-badge">⏸ paused</span>
+        <div class="gen-node" id="genNodeContext">
+          <span class="gen-node-label">Context so far</span>
+          <span class="gen-node-value" id="genNodeContextValue">—</span>
+        </div>
+        <div class="gen-arrow" id="genArrowIn"></div>
+        <div class="gen-node" id="genNodeModel">
+          <span class="gen-node-label">Model</span>
+          <span class="gen-node-value" id="genNodeModelValue">idle</span>
+        </div>
+        <div class="gen-arrow" id="genArrowOut"></div>
+        <div class="gen-node" id="genNodeToken">
+          <span class="gen-node-label">Predicted token</span>
+          <span class="gen-node-value" id="genNodeTokenValue">—</span>
+        </div>
+        <div class="gen-loopback" id="genLoopback">
+          <span class="gen-loopback-icon">↩</span>
+          <span>token appended — fed back in as part of the next context</span>
+        </div>
+      </div>
+      <div class="gen-context-box" id="genContextBox">
+        <div id="generatedText" class="generated-text"></div>
+      </div>
+    </div>
+  </section>
 </div>
 
 <div id="traceModal" class="modal-backdrop" aria-hidden="true">

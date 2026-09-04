@@ -9,8 +9,145 @@ function node(e,label,n){return e?`<div class="graph-node captured" data-name="$
 function graph(entries){let m=Object.fromEntries(entries.map(e=>[short(e.name),e]));let n=0,N=(k,l)=>node(m[k],l,++n);return `<div class="transformer-graph">${N('input','Input')}<div class="arrow">↓ RMSNorm</div>${N('input_layernorm','Input RMSNorm')}<div class="graph-branch"><div>${N('q_proj','Q Projection')}</div><div>${N('k_proj','K Projection')}</div><div>${N('v_proj','V Projection')}</div></div><div class="arrow">↓ Attention → O Projection → Residual</div>${N('o_proj','O Projection')}<div class="arrow">↓</div>${N('post_attention_layernorm','Post-Attention RMSNorm')}<div class="graph-branch"><div>${N('gate_proj','Gate Projection')}</div><div>${N('up_proj','Up Projection')}</div><div class="graph-node conceptual">SiLU × Gate · conceptual</div></div><div class="arrow">↓</div>${N('down_proj','Down Projection')}<div class="arrow">↓ Residual</div>${N('output','Layer Output')}</div>`}
 function renderExecution(d){show('executionCard');let traces=d.execution_trace||[];let html='<h2>3 · Transformer execution trace</h2>';for(let i=0;i<d.model.layers;i++){let es=traces.filter(e=>new RegExp(`^layer_${i}\\.`).test(e.name));html+=`<details class="layer" ${i===0?'open':''}><summary class="layer-header"><span class="layer-title">Layer ${i}</span><span class="layer-count">${es.length} captured operations</span></summary><div class="layer-body">${graph(es)}</div></details>`}$('executionCard').innerHTML=html;document.querySelectorAll('.graph-node.captured').forEach(el=>el.onclick=()=>openModal(traces.find(e=>e.name===el.dataset.name)))}
 function renderProbabilities(d){show('probabilityCard');$('probabilityCard').innerHTML=`<h2>4 · Next-token probabilities</h2>${(d.next_tokens||[]).map(x=>`<div class="probability-row"><span>${esc(x.token)}</span><div class="prob-bar"><span style="width:${Math.min(100,x.probability*100)}%"></span></div><span>${(x.probability*100).toFixed(2)}%</span></div>`).join('')}`}
-async function renderGeneration(d){show('generationCard');let s=d.generation_steps||[];$('generationCard').innerHTML='<h2>5 · Generation</h2><div class="generation"><span id="genText"></span><span id="cursor" class="cursor"></span></div><div id="genMeta" class="status"></div>';for(let i=0;i<s.length;i++){document.getElementById('genText').insertAdjacentHTML('beforeend',`<span class="gen-token">${esc(s[i].token)}</span>`);$('genMeta').textContent=`Token ${i+1} of ${s.length} · confidence ${(s[i].probability*100).toFixed(2)}%`;await new Promise(r=>setTimeout(r,90))}$('cursor').remove();$('genMeta').textContent=`Generated ${s.length} pre-recorded tokens`}
+let genPaused = false;
+
+function getGenSpeedMultiplier() {
+  const slider = document.getElementById('genSpeedSlider');
+  return slider ? Number(slider.value) || 1 : 1;
+}
+
+function updateGenSpeedLabel() {
+  const slider = document.getElementById('genSpeedSlider');
+  const label = document.getElementById('genSpeedValue');
+  if (slider && label) label.textContent = `${Number(slider.value).toFixed(1)}×`;
+}
+
+function genWait(baseMs) {
+  return new Promise(resolve => {
+    let remaining = baseMs;
+    const tickMs = 40;
+    function tick() {
+      if (remaining <= 0) return resolve();
+      setTimeout(() => {
+        if (!genPaused) remaining -= tickMs * getGenSpeedMultiplier();
+        tick();
+      }, tickMs);
+    }
+    tick();
+  });
+}
+
+function flowArrow(arrowEl) {
+  if (!arrowEl) return;
+  arrowEl.classList.remove('flowing');
+  void arrowEl.offsetWidth;
+  arrowEl.classList.add('flowing');
+}
+
+function truncateForNode(text, max = 22) {
+  if (!text) return '';
+  return text.length <= max ? text : `…${text.slice(-max)}`;
+}
+
+async function renderGeneration(data) {
+  show('generationCard');
+
+  const stepCount = $('generationStepCount');
+  const stepProb = $('generationStepProb');
+  const textEl = $('generatedText');
+  const contextBox = $('genContextBox');
+  const nodeContext = $('genNodeContext');
+  const nodeContextValue = $('genNodeContextValue');
+  const nodeModel = $('genNodeModel');
+  const nodeModelValue = $('genNodeModelValue');
+  const nodeToken = $('genNodeToken');
+  const nodeTokenValue = $('genNodeTokenValue');
+  const arrowIn = $('genArrowIn');
+  const arrowOut = $('genArrowOut');
+  const loopback = $('genLoopback');
+
+  textEl.innerHTML = '';
+  stepProb.textContent = '';
+  stepProb.classList.remove('show');
+  nodeContext.classList.remove('active');
+  nodeModel.classList.remove('active');
+  nodeToken.classList.remove('active');
+  contextBox.classList.remove('reading');
+  loopback.classList.remove('show');
+  nodeContextValue.textContent = '—';
+  nodeModelValue.textContent = 'idle';
+  nodeTokenValue.textContent = '—';
+
+  const steps = Array.isArray(data.generation_steps) ? data.generation_steps : [];
+  if (!steps.length) {
+    stepCount.textContent = '';
+    textEl.innerHTML = '<span class="generation-empty">No generation steps were recorded.</span>';
+    return;
+  }
+
+  const cursor = document.createElement('span');
+  cursor.className = 'gen-cursor';
+  textEl.appendChild(cursor);
+
+  const total = steps.length;
+  let contextSoFar = '';
+
+  for (let i = 0; i < total; i++) {
+    const step = steps[i];
+    const probability = Number(step.probability);
+    stepCount.textContent = `Token ${i + 1} of ${total}`;
+
+    nodeContextValue.textContent = truncateForNode(contextSoFar) || '(prompt)';
+    nodeContext.classList.add('active');
+    contextBox.classList.add('reading');
+    flowArrow(arrowIn);
+    await genWait(260);
+
+    nodeContext.classList.remove('active');
+    contextBox.classList.remove('reading');
+    nodeModel.classList.add('active');
+    nodeModelValue.textContent = 'computing…';
+    await genWait(300);
+
+    flowArrow(arrowOut);
+    nodeModel.classList.remove('active');
+    nodeModelValue.textContent = 'idle';
+    nodeToken.classList.add('active');
+    nodeTokenValue.textContent = step.token;
+    stepProb.textContent = `${(probability * 100).toFixed(1)}% confidence`;
+    stepProb.classList.add('show');
+
+    const ghostSpan = document.createElement('span');
+    ghostSpan.className = 'gen-token-ghost';
+    ghostSpan.textContent = step.token;
+    textEl.insertBefore(ghostSpan, cursor);
+    await genWait(420);
+
+    ghostSpan.remove();
+    const tokenSpan = document.createElement('span');
+    tokenSpan.className = 'gen-token';
+    tokenSpan.textContent = step.token;
+    textEl.insertBefore(tokenSpan, cursor);
+    contextSoFar += step.token;
+
+    nodeToken.classList.remove('active');
+    loopback.classList.add('show');
+    await genWait(480);
+
+    stepProb.classList.remove('show');
+    loopback.classList.remove('show');
+    await genWait(40);
+  }
+
+  cursor.remove();
+  nodeContextValue.textContent = truncateForNode(contextSoFar);
+  nodeModelValue.textContent = 'idle';
+  nodeTokenValue.textContent = '—';
+  stepCount.textContent = `Generated ${total} tokens`;
+  stepProb.textContent = '';
+}
+
 function openModal(e){if(!e)return;let key=short(e.name),stats=e.stats||{},p=e.preview||[];$('modalTitle').textContent=key;$('modalRaw').textContent=e.name;$('modalBody').innerHTML=`<p class="status">${esc(INFO[key]||'Captured intermediate tensor.')}</p><div class="chips"><span class="chip">shape ${shape(e.shape)}</span><span class="chip">dtype ${esc(e.dtype)}</span><span class="chip">device ${esc(e.device)}</span></div><h3>Tensor statistics</h3><div class="stats-grid">${['min','max','mean','std'].map(k=>`<div class="stat"><div class="label">${k}</div><div class="value">${fmt(stats[k])}</div></div>`).join('')}</div><h3>Sample values</h3><div class="bars">${p.map(v=>`<div class="tensor-bar"><span class="v">${fmt(v)}</span><div class="tensor-track"><i style="width:${Math.min(100,Math.abs(v)/(Math.max(...p.map(x=>Math.abs(x)),1))*100)}%"></i></div></div>`).join('')}</div>`;$('traceModal').classList.add('open');$('traceModal').setAttribute('aria-hidden','false')}
 function closeModal(){$('traceModal').classList.remove('open');$('traceModal').setAttribute('aria-hidden','true')}
 async function inspect(){let b=$('inspectButton');b.disabled=true;$('status').textContent='Replaying recorded inspection…';try{let r=await fetch(cfg.inspectionUrl,{cache:'no-store'});if(!r.ok)throw Error(`HTTP ${r.status}`);inspection=await r.json();$('prompt').value=inspection.prompt||'';renderModel(inspection);renderTokens(inspection);renderPipeline(inspection);renderExecution(inspection);renderProbabilities(inspection);await renderGeneration(inspection);$('status').textContent=`Static snapshot · ${inspection.execution_trace?.length||0} tensor records loaded`}catch(e){$('status').textContent=`Could not load inspection.json: ${e.message}`}finally{b.disabled=false}}
-$('subtitle').textContent=cfg.subtitle||'';$('inspectButton').onclick=inspect;$('modalClose').onclick=closeModal;$('traceModal').onclick=e=>{if(e.target===$('traceModal'))closeModal()};document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});inspect();
+$('subtitle').textContent=cfg.subtitle||'';$('inspectButton').onclick=inspect;$('modalClose').onclick=closeModal;$('traceModal').onclick=e=>{if(e.target===$('traceModal'))closeModal()};document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});$('genSpeedSlider').oninput=updateGenSpeedLabel;$('genLoopDiagram').addEventListener('mouseenter',()=>{genPaused=true;$('genLoopDiagram').classList.add('paused')});$('genLoopDiagram').addEventListener('mouseleave',()=>{genPaused=false;$('genLoopDiagram').classList.remove('paused')});$('replayGenerationButton').onclick=async()=>{if(!inspection)return;const b=$('replayGenerationButton');b.disabled=true;try{await renderGeneration(inspection)}finally{b.disabled=false}};inspect();
