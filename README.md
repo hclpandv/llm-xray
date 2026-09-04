@@ -1,31 +1,60 @@
 # LLM-Xray 🔬
 
-Interactive X-ray visualization and debugger for local Hugging Face language models.
+**See inside a language model while it runs.**
 
-LLM-Xray runs a language model locally and exposes what happens inside the model during inference — from tokenization and embeddings through Transformer layers, logits, probabilities, and generation.
+LLM-Xray is an interactive visualization and debugging tool for **local Hugging Face causal language models**. It makes the path from prompt → tokens → embeddings → Transformer layers → logits → probabilities → generation visible and inspectable.
 
-The goal is to make the internals of a language model visible, inspectable, and understandable.
-
----
-
-## Current status
-
-LLM-Xray currently supports interactive inspection of local Hugging Face causal language models.
-
-The current implementation has been tested with:
-
-* `HuggingFaceTB/SmolLM2-360M-Instruct`
-* `Qwen/Qwen2.5-0.5B-Instruct`
-
-The model can be selected at runtime without changing the source code.
+The goal is simple: **make language-model internals easier to see, understand, and explore.**
 
 ---
 
-## What it currently does
+## 🌐 Live Demo
 
-### Tokenization
+**[Open the LLM-Xray GitHub Pages demo](https://hclpandv.github.io/llm-xray/)**
 
-Given a prompt, LLM-Xray shows:
+The public demo is a **static, pre-recorded inspection** of a real model run.
+
+It does **not** download a model or run inference in the browser. Instead, the inspection data is captured locally and stored in the repository, allowing anyone to explore the visualization directly from GitHub Pages.
+
+For the full interactive experience — including running different local Hugging Face models — run LLM-Xray locally.
+
+---
+
+## ✨ What LLM-Xray Shows
+
+LLM-Xray exposes several stages of a language model's forward pass:
+
+```text
+Prompt
+  ↓
+Tokenization
+  ↓
+Token IDs
+  ↓
+Embeddings
+  ↓
+Transformer layers
+  ↓
+Hidden states
+  ↓
+Logits
+  ↓
+Next-token probabilities
+  ↓
+Generation
+```
+
+Instead of treating a language model as a black box, LLM-Xray lets you inspect what is happening inside.
+
+---
+
+## 🔍 Features
+
+### 1. Tokenization
+
+Given a prompt, LLM-Xray shows how the tokenizer converts text into tokens.
+
+The interface exposes:
 
 * Token position
 * Token string
@@ -38,22 +67,22 @@ Given a prompt, LLM-Xray shows:
 For example:
 
 ```text
-The capital of France is
-
-The       → 785
-Ġcapital  → 6722
-Ġof       → 315
-ĠFrance   → 9625
-Ġis       → 374
+The        → 785
+Ġcapital   → 6722
+Ġof        → 315
+ĠFrance    → 9625
+Ġis        → 374
 ```
 
-The `Ġ` character is displayed by some Hugging Face tokenizers to represent a preceding space.
+Some Hugging Face tokenizers use `Ġ` to represent a preceding space.
+
+Seeing the tokenization step makes it easier to understand what the model actually receives as input.
 
 ---
 
-### Token embeddings
+### 2. Token Embeddings
 
-LLM-Xray exposes the relationship between a token ID and the model's embedding matrix:
+LLM-Xray makes the relationship between a token ID and its embedding vector visible:
 
 ```text
 Token
@@ -67,7 +96,7 @@ Selected row
 Embedding vector
 ```
 
-For example, with Qwen:
+For example, with Qwen2.5:
 
 ```text
 Embedding matrix
@@ -79,16 +108,19 @@ Token ID
 Selected row
 9625
 
-896-dimensional vector
+Embedding vector
+896 dimensions
 ```
 
-The interface displays the first values of the actual embedding vector.
+The interface exposes the beginning of the actual embedding vector so you can inspect the numerical representation passed into the Transformer.
 
 ---
 
-### Transformer architecture
+### 3. Transformer Architecture
 
-The interface displays the model's architecture dynamically, including:
+The UI derives model information dynamically rather than assuming a fixed model size.
+
+It exposes information such as:
 
 * Number of Transformer layers
 * Hidden dimension
@@ -97,68 +129,63 @@ The interface displays the model's architecture dynamically, including:
 * Final hidden-state shape
 * Logit tensor shape
 
-The pipeline adapts to the loaded model rather than assuming a fixed architecture size.
-
-For example:
+For the current Qwen2.5 example:
 
 ```text
 Token IDs
 [5]
-↓
-Token Embeddings
+   ↓
+Token embeddings
 [1 × 5 × 896]
-↓
-24 Transformer Layers
+   ↓
+24 Transformer layers
 Hidden size: 896
-↓
-Final RMSNorm
-[1 × 896]
-↓
-LM Head
+   ↓
+Final hidden state
+   ↓
+LM head
 [1 × 5 × 151936]
-↓
-Softmax
-151,936 probabilities
+   ↓
+Next-token probabilities
+151,936 values
 ```
+
+This makes the relationship between model architecture and tensor dimensions explicit.
 
 ---
 
-### Transformer execution trace
+### 4. Transformer Execution Trace
 
-During a forward pass, LLM-Xray captures actual intermediate tensors from the Transformer layers.
+During a real forward pass, LLM-Xray captures intermediate tensors from the Transformer.
 
-For the currently supported Llama-style architectures, each layer exposes:
+For the Llama-style architectures currently supported, a layer can be followed through operations such as:
 
 ```text
-Input
-↓
+Layer input
+   ↓
 Input RMSNorm
-↓
-Q Projection
-K Projection
-V Projection
-↓
+   ↓
+Q projection
+K projection
+V projection
+   ↓
 Attention
-↓
-O Projection
-↓
-Residual
-↓
-Post-Attention RMSNorm
-↓
-Gate Projection
-Up Projection
-↓
+   ↓
+O projection
+   ↓
+Post-attention RMSNorm
+   ↓
+Gate projection
+Up projection
+   ↓
 SiLU × Gate
-↓
-Down Projection
-↓
-Residual
-↓
+   ↓
+Down projection
+   ↓
 Layer output
 ```
 
-The trace currently captures 10 real operations per Transformer layer:
+The tracer currently captures **10 real operations per Transformer layer**:
 
 1. Layer input
 2. Input RMSNorm
@@ -171,7 +198,7 @@ The trace currently captures 10 real operations per Transformer layer:
 9. Up projection
 10. Down projection
 
-Each captured tensor can be inspected in the UI.
+Each captured tensor can be inspected directly in the UI.
 
 The tensor inspector shows:
 
@@ -179,6 +206,10 @@ The tensor inspector shows:
 * Tensor shape
 * Data type
 * Device
+* Minimum value
+* Maximum value
+* Mean
+* Standard deviation
 * First 16 tensor values
 
 For example:
@@ -186,21 +217,20 @@ For example:
 ```text
 layer_0.mlp.down_proj
 
-[1 × 5 × 896]
-
-dtype: torch.float32
+shape:  [1 × 5 × 896]
+dtype:  torch.float32
 device: mps:0
 ```
 
+This turns abstract architecture diagrams into actual tensors produced during inference.
+
 ---
 
-### Next-token probabilities
+### 5. Next-Token Probabilities
 
-After the forward pass, LLM-Xray calculates the probability distribution for the next token.
+After the forward pass, LLM-Xray exposes the model's next-token probability distribution.
 
-The interface displays the top predicted tokens and their probabilities.
-
-For example:
+The interface shows the highest-probability candidate tokens and their probabilities:
 
 ```text
 Paris       30.22%
@@ -209,53 +239,93 @@ ______      12.31%
 ...
 ```
 
-This makes the connection between the model's final hidden state, logits, and predicted next token visible.
+This connects several otherwise separate concepts:
+
+```text
+Final hidden state
+       ↓
+     Logits
+       ↓
+     Softmax
+       ↓
+Token probabilities
+       ↓
+Predicted next token
+```
 
 ---
 
-### Local generation
+### 6. Token-by-Token Generation
 
-LLM-Xray can also generate text from the local model.
+LLM-Xray also visualizes autoregressive generation.
 
-Generation is performed directly through the Hugging Face model rather than through an external LLM API.
+The generation interface shows the basic loop:
+
+```text
+Context so far
+      ↓
+    Model
+      ↓
+Predicted token
+      ↓
+Append token
+      ↓
+Updated context
+      ↺
+```
+
+The production interface includes a replayable generation animation with:
+
+* Token-by-token progression
+* Predicted-token highlighting
+* Probability display
+* Context updates
+* Generation speed control
+* Hover-to-pause interaction
+* Replay support
+
+The GitHub Pages demo uses the same visualization with **pre-recorded inspection data** instead of running inference.
 
 ---
 
-## Supported models
+## 🤗 Supported Models
 
-The project is designed around Hugging Face `AutoModelForCausalLM` and `AutoTokenizer`.
+LLM-Xray is built around Hugging Face:
 
-Current testing includes:
+```text
+AutoModelForCausalLM
+AutoTokenizer
+```
+
+The current implementation has been tested with:
 
 ### SmolLM2
 
 ```text
-Model:
 HuggingFaceTB/SmolLM2-360M-Instruct
 
 Transformer layers: 32
 Hidden size:        960
-Vocabulary:         49,152
+Vocabulary size:    49,152
 ```
 
 ### Qwen2.5
 
 ```text
-Model:
 Qwen/Qwen2.5-0.5B-Instruct
 
 Transformer layers: 24
 Hidden size:        896
-Vocabulary:         151,936
+Vocabulary size:    151,936
 ```
 
-Testing multiple models is important because their architectures and dimensions differ.
+Testing multiple models is important because different model families can use different layer counts, tensor dimensions, and internal module layouts.
 
 ---
 
-## Runtime model selection
+## ⚙️ Runtime Model Selection
 
-The model is configured through the `LLM_XRAY_MODEL` environment variable.
+The model is selected using the `LLM_XRAY_MODEL` environment variable.
 
 The default model is:
 
@@ -263,107 +333,19 @@ The default model is:
 HuggingFaceTB/SmolLM2-360M-Instruct
 ```
 
-To run Qwen instead:
+To run Qwen2.5 instead:
 
 ```bash
 LLM_XRAY_MODEL=Qwen/Qwen2.5-0.5B-Instruct uv run llm-xray
 ```
 
-This allows different models to be tested without modifying the source code.
+No source-code changes are required to switch models.
 
 ---
 
-## Technology
+## 🧠 How It Works
 
-LLM-Xray currently uses:
-
-* Python
-* FastAPI
-* Uvicorn
-* PyTorch
-* Hugging Face Transformers
-* Hugging Face Tokenizers
-* HTML / CSS / JavaScript
-* `uv` for Python environment and dependency management
-
-On Apple Silicon, PyTorch's MPS backend is used when available.
-
-The runtime device selection is:
-
-```text
-MPS → CUDA → CPU
-```
-
----
-
-## Running locally
-
-### Requirements
-
-* Python 3.11+
-* `uv`
-* A machine capable of running the selected Hugging Face model locally
-
-### Install
-
-Clone the repository and install the environment:
-
-```bash
-uv sync
-```
-
-For Apple Silicon development, Python 3.12 is currently used:
-
-```bash
-uv python install 3.12
-uv python pin 3.12
-uv sync
-```
-
-### Start LLM-Xray
-
-```bash
-uv run llm-xray
-```
-
-The server starts on:
-
-```text
-http://127.0.0.1:8000
-```
-
-Open that address in a browser.
-
----
-
-## Project structure
-
-```text
-llm-xray/
-│
-├── src/
-│   └── llm_xray/
-│       ├── __init__.py
-│       ├── config.py
-│       ├── model.py
-│       ├── schemas.py
-│       ├── server.py
-│       └── tracer.py
-│
-├── web/
-│   └── index.html
-│
-├── tests/
-│
-├── pyproject.toml
-└── README.md
-```
-
----
-
-## Architecture
-
-The application is split into a small Python backend and browser-based frontend.
+LLM-Xray consists of a small Python backend and a browser-based frontend.
 
 ```text
 Browser
@@ -392,9 +374,85 @@ FastAPI
 
 The `TransformerTracer` uses PyTorch forward hooks to capture tensors while the model executes.
 
+The browser then turns those captured values into an interactive inspection interface.
+
 ---
 
-## Roadmap
+## 🛠️ Technology
+
+LLM-Xray currently uses:
+
+* **Python**
+* **FastAPI**
+* **Uvicorn**
+* **PyTorch**
+* **Hugging Face Transformers**
+* **Hugging Face Tokenizers**
+* **HTML / CSS / JavaScript**
+* **uv** for Python environment and dependency management
+
+### Device selection
+
+When available, the runtime prefers hardware acceleration in this order:
+
+```text
+MPS → CUDA → CPU
+```
+
+This allows LLM-Xray to run on Apple Silicon, CUDA-capable systems, or CPU-only machines.
+
+---
+
+## ▶️ Running Locally
+
+### Requirements
+
+* Python 3.11+
+* `uv`
+* A machine capable of running the selected Hugging Face model locally
+
+### Install
+
+Clone the repository:
+
+```bash
+git clone https://github.com/hclpandv/llm-xray.git
+cd llm-xray
+```
+
+Install the environment:
+
+```bash
+uv sync
+```
+
+For Apple Silicon development, Python 3.12 is currently used:
+
+```bash
+uv python install 3.12
+uv python pin 3.12
+uv sync
+```
+
+### Start LLM-Xray
+
+```bash
+uv run llm-xray
+```
+
+The server starts on:
+
+```text
+http://127.0.0.1:8000
+```
+
+Open that address in your browser.
+
+The local application loads the selected Hugging Face model and performs inference on your machine.
+
+---
+
+## 🗺️ Roadmap
 
 The long-term goal is to turn LLM-Xray into a more complete interactive debugger for Transformer models.
 
@@ -411,15 +469,15 @@ Planned areas include:
 * More detailed tensor visualization
 * Interactive execution controls
 
-Eventually, the interface should allow you to pause the model's computation and inspect what is happening at each stage.
+Eventually, the interface should make it possible to pause computation and inspect what is happening at each stage of a Transformer.
 
 ---
 
-## Current limitations
+## ⚠️ Current Limitations
 
-LLM-Xray is intentionally still an early-stage project.
+LLM-Xray is still an early-stage project.
 
-The current execution tracer assumes a Llama-style Transformer module structure for several internal components, including modules such as:
+The current execution tracer assumes a Llama-style internal module structure for several components, including:
 
 ```text
 model.layers
@@ -432,34 +490,57 @@ mlp.up_proj
 mlp.down_proj
 ```
 
-This works for the models currently tested, including SmolLM2 and Qwen2.5, but different Hugging Face architectures may use different internal module layouts.
+This works for the models currently tested, including SmolLM2 and Qwen2.5, but other Hugging Face architectures may use different internal module layouts.
 
 Making the tracer genuinely architecture-independent is a future goal.
 
-The project currently focuses on **visibility and understanding rather than model output quality**.
+The project currently prioritizes:
+
+> **Visibility, inspectability, and understanding over model-output benchmarking.**
 
 ---
 
-## Philosophy
+## 🎯 Philosophy
 
-LLMs are often presented as:
+Language models are often presented as:
 
 ```text
 Input → Output
 ```
 
-LLM-Xray explores the much more interesting question:
+LLM-Xray asks a more interesting question:
 
 ```text
 What happens between the input and the output?
 ```
 
-Instead of treating a language model as a black box, the project attempts to expose the computation happening inside it.
+A Transformer is not simply a black box that turns text into text.
 
-The project is intended primarily as an educational and research tool for understanding modern language models.
+It is a sequence of:
+
+* Tensor transformations
+* Normalization operations
+* Linear projections
+* Attention computations
+* Nonlinear transformations
+* Residual connections
+* Logit calculations
+* Probability distributions
+
+LLM-Xray attempts to make those computations visible.
+
+The project is intended primarily as an **educational and research tool for understanding modern language models**.
 
 ---
 
-## License
+## 🤝 Contributing
+
+Contributions, ideas, bug reports, architecture experiments, and UI improvements are welcome.
+
+If you try LLM-Xray with another Hugging Face architecture, feedback about module-layout compatibility is especially useful.
+
+---
+
+## 📄 License
 
 License to be decided.
