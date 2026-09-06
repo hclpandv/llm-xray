@@ -407,7 +407,9 @@
         }
 
         /* =========================================================
-           Pipeline
+           Pipeline — icon-badged stages, a proportional bar per
+           stage (log-scaled feature dimension), and a flowing
+           connector between them instead of a static arrow.
            ========================================================= */
 
         .pipeline {
@@ -416,29 +418,158 @@
             margin-top: 4px;
         }
 
-        .pipeline-box {
+        .pipeline-stage {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
             width: 100%;
             background: var(--panel-raised);
             border: 1px solid var(--line);
             border-left: 2px solid var(--trace);
             border-radius: var(--radius-sm);
-            padding: 12px 16px;
+            padding: 14px 16px;
+            font-family: var(--font-ui);
+            text-align: left;
+            color: inherit;
         }
 
-        .pipeline-name { font-weight: 500; font-size: 13.5px; }
+        button.pipeline-stage {
+            border: 1px solid var(--line);
+            border-left: 2px solid var(--trace);
+            cursor: default;
+        }
+
+        .pipeline-stage-clickable {
+            cursor: pointer;
+            transition: border-color .15s ease, background .15s ease;
+        }
+
+        .pipeline-stage-clickable:hover {
+            background: #1a2029;
+            border-color: var(--line-strong);
+            border-left-color: var(--signal);
+        }
+
+        .pipeline-stage-icon {
+            flex: 0 0 auto;
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
+            background: var(--panel);
+            color: var(--trace);
+            font-family: var(--font-mono);
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .pipeline-stage-clickable .pipeline-stage-icon {
+            color: var(--signal);
+        }
+
+        .pipeline-stage-body {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .pipeline-stage-top {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .pipeline-name { font-weight: 600; font-size: 13.5px; }
 
         .pipeline-shape {
             color: var(--text-dim);
             font-family: var(--font-mono);
-            font-size: 12px;
-            margin-top: 4px;
+            font-size: 11.5px;
+            white-space: nowrap;
         }
 
-        .arrow {
-            color: var(--text-faint);
-            text-align: center;
-            padding: 4px;
-            font-size: 13px;
+        .pipeline-stage-desc {
+            margin-top: 5px;
+            color: var(--text-dim);
+            font-size: 12px;
+            line-height: 1.55;
+            font-weight: 400;
+        }
+
+        .pipeline-stage-link {
+            display: inline-block;
+            margin-left: 6px;
+            color: var(--signal);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .pipeline-bar-track {
+            margin-top: 10px;
+            height: 4px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .pipeline-bar-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--signal-dim), var(--trace));
+            border-radius: 999px;
+            transition: width .6s cubic-bezier(.2,.8,.2,1);
+        }
+
+        .pipeline-flow {
+            position: relative;
+            height: 22px;
+            margin: 2px 0 2px 17px;
+            width: 1px;
+        }
+
+        .pipeline-flow-line {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            width: 1px;
+            background: var(--line-strong);
+        }
+
+        .pipeline-flow-dot {
+            position: absolute;
+            left: -2px;
+            top: 0;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: var(--trace);
+            box-shadow: 0 0 6px rgba(72,201,208,.6);
+            opacity: 0;
+            animation: pipelineFlow 2.2s linear infinite;
+        }
+
+        .pipeline-flow-delay-1 .pipeline-flow-dot { animation-delay: .3s; }
+        .pipeline-flow-delay-2 .pipeline-flow-dot { animation-delay: .6s; }
+        .pipeline-flow-delay-3 .pipeline-flow-dot { animation-delay: .9s; }
+        .pipeline-flow-delay-4 .pipeline-flow-dot { animation-delay: 1.2s; }
+
+        @keyframes pipelineFlow {
+            0%   { top: 0%; opacity: 0; }
+            12%  { opacity: 1; }
+            88%  { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        @media (max-width: 700px) {
+            .pipeline-stage-top {
+                flex-direction: column;
+                gap: 2px;
+            }
         }
 
         /* =========================================================
@@ -638,37 +769,6 @@
             width: 100%;
         }
 
-        .branch-arrow {
-            color: var(--text-faint);
-            font-size: 14px;
-        }
-
-        .attention-join {
-            width: min(700px, 100%);
-            height: 22px;
-            border-bottom: 1px solid var(--line-strong);
-            position: relative;
-        }
-
-        .attention-join::after {
-            content: "";
-            position: absolute;
-            bottom: -4px;
-            left: calc(50% - 4px);
-            width: 7px;
-            height: 7px;
-            border-right: 1.5px solid var(--text-faint);
-            border-bottom: 1.5px solid var(--text-faint);
-            transform: rotate(45deg);
-        }
-
-        .residual-label {
-            color: var(--text-faint);
-            font-family: var(--font-mono);
-            font-size: 10px;
-            margin: 2px 0;
-        }
-
         /* =========================================================
            Probabilities
            ========================================================= */
@@ -718,7 +818,13 @@
         }
 
         /* =========================================================
-           Generation
+           Generation — autoregressive loop diagram
+
+           Context -> Model -> Predicted token -> (looped back into
+           Context) rendered as a real diagram: a dot flows along
+           each arrow, the active node highlights, a ghost token
+           previews the prediction before it's accepted, and the
+           whole thing can be replayed or slowed down.
            ========================================================= */
 
         .generation-intro {
@@ -794,6 +900,14 @@
             50% { opacity: 0; }
         }
 
+        .generation-empty {
+            color: var(--text-faint);
+            font-family: var(--font-mono);
+            font-size: 12px;
+        }
+
+        /* ---- replay button (lives in the h2) ---- */
+
         .replay-button {
             margin-left: auto;
             display: inline-flex;
@@ -807,7 +921,6 @@
             font-family: var(--font-ui);
             font-size: 11.5px;
             font-weight: 500;
-            letter-spacing: 0;
             cursor: pointer;
             transition: border-color .15s ease, color .15s ease, background .15s ease;
         }
@@ -831,6 +944,8 @@
         .replay-button:disabled svg {
             animation: spin 0.9s linear infinite;
         }
+
+        /* ---- speed slider + pause hint ---- */
 
         .gen-controls {
             display: flex;
@@ -865,8 +980,19 @@
             opacity: .8;
         }
 
+        /* ---- the loop diagram itself ---- */
+
         .gen-loop {
             position: relative;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0;
+            margin-bottom: 18px;
+            padding: 16px 18px;
+            background: var(--ink);
+            border: 1px solid var(--line);
+            border-radius: var(--radius-sm);
         }
 
         .gen-paused-badge {
@@ -893,41 +1019,6 @@
         .gen-loop.paused .gen-node.active {
             box-shadow: 0 0 0 3px rgba(72,201,208,.18);
             border-color: var(--trace);
-        }
-
-        .gen-token-ghost {
-            display: inline-block;
-            border: 1px dashed var(--signal);
-            border-radius: 3px;
-            padding: 0 2px;
-            margin: 0 1px;
-            color: var(--text-faint);
-            animation: ghostPulse 1s ease-in-out infinite;
-        }
-
-        @keyframes ghostPulse {
-            0%, 100% { opacity: .5; }
-            50%      { opacity: .95; }
-        }
-
-        .generation-empty {
-            color: var(--text-faint);
-            font-family: var(--font-mono);
-            font-size: 12px;
-        }
-
-        /* ---- autoregressive loop diagram ---- */
-
-        .gen-loop {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 0;
-            margin-bottom: 18px;
-            padding: 16px 18px;
-            background: var(--ink);
-            border: 1px solid var(--line);
-            border-radius: var(--radius-sm);
         }
 
         .gen-node {
@@ -1041,6 +1132,21 @@
         .gen-loopback-icon {
             font-size: 13px;
             line-height: 1;
+        }
+
+        .gen-token-ghost {
+            display: inline-block;
+            border: 1px dashed var(--signal);
+            border-radius: 3px;
+            padding: 0 2px;
+            margin: 0 1px;
+            color: var(--text-faint);
+            animation: ghostPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes ghostPulse {
+            0%, 100% { opacity: .5; }
+            50%      { opacity: .95; }
         }
 
         .gen-context-box {
@@ -1332,7 +1438,7 @@
             .embedding-arrow { display: none; }
             .embedding-step, .embedding-vector { width: 100%; max-width: none; }
             .attention-branches { grid-template-columns: 1fr; }
-            .attention-branches::before, .attention-join { display: none; }
+            .attention-branches::before { display: none; }
             .trace-modal-meta { grid-template-columns: 1fr; }
             .prompt-footer { align-items: stretch; }
         }
@@ -1422,46 +1528,182 @@
 
         <h2>2. Transformer pipeline</h2>
 
+        <div class="status">
+            The same data moves through every stage below on every
+            run. Bar width is roughly how large each stage's feature
+            dimension is, log-scaled — watch how much it jumps at
+            the LM head, where the hidden size expands out to the
+            full vocabulary.
+        </div>
+
         <div class="pipeline">
 
-            <div class="pipeline-box">
-                <div class="pipeline-name">Token IDs</div>
-                <div id="tokenShape" class="pipeline-shape"></div>
+            <div class="pipeline-stage">
+
+                <div class="pipeline-stage-icon">#</div>
+
+                <div class="pipeline-stage-body">
+
+                    <div class="pipeline-stage-top">
+                        <span class="pipeline-name">Token IDs</span>
+                        <span id="tokenShape" class="pipeline-shape"></span>
+                    </div>
+
+                    <div class="pipeline-stage-desc">
+                        Each token is just an integer — an index into the vocabulary.
+                    </div>
+
+                    <div class="pipeline-bar-track">
+                        <div id="tokenBar" class="pipeline-bar-fill"></div>
+                    </div>
+
+                </div>
+
             </div>
 
-            <div class="arrow">↓</div>
-
-            <div class="pipeline-box">
-                <div class="pipeline-name">Token embeddings</div>
-                <div id="embeddingShape" class="pipeline-shape"></div>
+            <div class="pipeline-flow">
+                <div class="pipeline-flow-line"></div>
+                <div class="pipeline-flow-dot"></div>
             </div>
 
-            <div class="arrow">↓</div>
+            <div class="pipeline-stage">
 
-            <div class="pipeline-box">
-                <div id="layerPipelineName" class="pipeline-name"></div>
-                <div id="layerPipelineShape" class="pipeline-shape"></div>
+                <div class="pipeline-stage-icon">→</div>
+
+                <div class="pipeline-stage-body">
+
+                    <div class="pipeline-stage-top">
+                        <span class="pipeline-name">Token embeddings</span>
+                        <span id="embeddingShape" class="pipeline-shape"></span>
+                    </div>
+
+                    <div class="pipeline-stage-desc">
+                        Each integer is looked up in the embedding matrix and becomes a real-valued vector.
+                    </div>
+
+                    <div class="pipeline-bar-track">
+                        <div id="embeddingBar" class="pipeline-bar-fill"></div>
+                    </div>
+
+                </div>
+
             </div>
 
-            <div class="arrow">↓</div>
-
-            <div class="pipeline-box">
-                <div class="pipeline-name">Final RMSNorm  (Root Mean Square Normalization)</div>
-                <div id="finalHiddenShape" class="pipeline-shape"></div>
+            <div class="pipeline-flow pipeline-flow-delay-1">
+                <div class="pipeline-flow-line"></div>
+                <div class="pipeline-flow-dot"></div>
             </div>
 
-            <div class="arrow">↓</div>
+            <button
+                type="button"
+                class="pipeline-stage pipeline-stage-clickable"
+                onclick="jumpToExecutionTrace()"
+            >
 
-            <div class="pipeline-box">
-                <div class="pipeline-name">LM head</div>
-                <div id="logitsShape" class="pipeline-shape"></div>
+                <div class="pipeline-stage-icon">N×</div>
+
+                <div class="pipeline-stage-body">
+
+                    <div class="pipeline-stage-top">
+                        <span id="layerPipelineName" class="pipeline-name"></span>
+                        <span id="layerPipelineShape" class="pipeline-shape"></span>
+                    </div>
+
+                    <div class="pipeline-stage-desc">
+                        The vector for each token is refined layer after layer, reading and updating the whole sequence each time.
+                        <span class="pipeline-stage-link">Jump to the execution trace ↓</span>
+                    </div>
+
+                    <div class="pipeline-bar-track">
+                        <div id="layerBar" class="pipeline-bar-fill"></div>
+                    </div>
+
+                </div>
+
+            </button>
+
+            <div class="pipeline-flow pipeline-flow-delay-2">
+                <div class="pipeline-flow-line"></div>
+                <div class="pipeline-flow-dot"></div>
             </div>
 
-            <div class="arrow">↓</div>
+            <div class="pipeline-stage">
 
-            <div class="pipeline-box">
-                <div class="pipeline-name">Softmax</div>
-                <div id="softmaxShape" class="pipeline-shape"></div>
+                <div class="pipeline-stage-icon">‖·‖</div>
+
+                <div class="pipeline-stage-body">
+
+                    <div class="pipeline-stage-top">
+                        <span class="pipeline-name">Final RMSNorm</span>
+                        <span id="finalHiddenShape" class="pipeline-shape"></span>
+                    </div>
+
+                    <div class="pipeline-stage-desc">
+                        Root Mean Square Normalization (RMSNorm) gives every value one final rescale by its root mean square, so everything lands in a consistent range right before the model makes its prediction
+                    </div>
+
+                    <div class="pipeline-bar-track">
+                        <div id="finalHiddenBar" class="pipeline-bar-fill"></div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="pipeline-flow pipeline-flow-delay-3">
+                <div class="pipeline-flow-line"></div>
+                <div class="pipeline-flow-dot"></div>
+            </div>
+
+            <div class="pipeline-stage">
+
+                <div class="pipeline-stage-icon">Wᵀ</div>
+
+                <div class="pipeline-stage-body">
+
+                    <div class="pipeline-stage-top">
+                        <span class="pipeline-name">LM head</span>
+                        <span id="logitsShape" class="pipeline-shape"></span>
+                    </div>
+
+                    <div class="pipeline-stage-desc">
+                        One learned projection turns each token's hidden vector into a raw compatibility score against every word in the vocabulary.
+                    </div>
+
+                    <div class="pipeline-bar-track">
+                        <div id="logitsBar" class="pipeline-bar-fill"></div>
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="pipeline-flow pipeline-flow-delay-4">
+                <div class="pipeline-flow-line"></div>
+                <div class="pipeline-flow-dot"></div>
+            </div>
+
+            <div class="pipeline-stage">
+
+                <div class="pipeline-stage-icon">Σ</div>
+
+                <div class="pipeline-stage-body">
+
+                    <div class="pipeline-stage-top">
+                        <span class="pipeline-name">Softmax</span>
+                        <span id="softmaxShape" class="pipeline-shape"></span>
+                    </div>
+
+                    <div class="pipeline-stage-desc">
+                        Those raw scores become a probability distribution over the whole vocabulary — one number per word, all adding up to 1.
+                    </div>
+
+                    <div class="pipeline-bar-track">
+                        <div id="softmaxBar" class="pipeline-bar-fill"></div>
+                    </div>
+
+                </div>
+
             </div>
 
         </div>
@@ -1583,71 +1825,6 @@
 <script>
 
 /* =========================================================
-   Generation animation controls (speed + hover-to-pause)
-   ========================================================= */
-
-let genPaused = false;
-
-function getGenSpeedMultiplier() {
-
-    const slider =
-        document.getElementById("genSpeedSlider");
-
-    if (!slider) {
-        return 1;
-    }
-
-    return Number(slider.value) || 1;
-}
-
-function updateGenSpeedLabel() {
-
-    const slider =
-        document.getElementById("genSpeedSlider");
-
-    const label =
-        document.getElementById("genSpeedValue");
-
-    if (slider && label) {
-        label.textContent =
-            `${Number(slider.value).toFixed(1)}×`;
-    }
-}
-
-// waits `baseMs` of "animation time", scaled by the speed slider,
-// and fully frozen while the diagram is hovered (paused) — used
-// in place of a plain sleep() throughout renderGeneration
-function genWait(baseMs) {
-
-    return new Promise(resolve => {
-
-        let remaining = baseMs;
-        const tickMs = 40;
-
-        function tick() {
-
-            if (remaining <= 0) {
-                resolve();
-                return;
-            }
-
-            setTimeout(() => {
-
-                if (!genPaused) {
-                    remaining -= tickMs * getGenSpeedMultiplier();
-                }
-
-                tick();
-
-            }, tickMs);
-        }
-
-        tick();
-    });
-}
-
-
-/* =========================================================
    Main inspection
    ========================================================= */
 
@@ -1679,7 +1856,7 @@ async function inspectModel() {
 
             body: JSON.stringify({
                 prompt: prompt,
-                max_new_tokens: 20
+                max_new_tokens: 5
             })
 
         });
@@ -1695,7 +1872,8 @@ async function inspectModel() {
         const data =
             await response.json();
 
-        window.__lastInspectionData = data;
+        window.__lastInspectionData =
+            data;
 
         renderModel(data);
         renderTokens(data);
@@ -1716,37 +1894,6 @@ async function inspectModel() {
 
         status.textContent =
             `Error: ${error.message}`;
-
-    } finally {
-
-        button.disabled = false;
-
-    }
-}
-
-
-// re-runs the generation animation from the last response,
-// without re-running the model — lets the user re-watch the
-// loop without scrolling back up to the Inspect button
-async function replayGeneration() {
-
-    const data =
-        window.__lastInspectionData;
-
-    if (!data) {
-        return;
-    }
-
-    const button =
-        document.getElementById(
-            "replayGenerationButton"
-        );
-
-    button.disabled = true;
-
-    try {
-
-        await renderGeneration(data);
 
     } finally {
 
@@ -2128,6 +2275,96 @@ function renderPipeline(data) {
     document.getElementById("softmaxShape")
         .textContent =
             `${data.model.vocab_size.toLocaleString()} probabilities`;
+
+    setPipelineBars(data);
+}
+
+
+/* =========================================================
+   Pipeline dimension bars
+
+   Each stage's bar width reflects the size of its feature
+   dimension, log-scaled against the largest one in the whole
+   pipeline (the vocabulary) — so the jump at the LM head is
+   visible instead of implied by a number alone.
+   ========================================================= */
+
+function setPipelineBars(data) {
+
+    const hiddenSize =
+        data.model.hidden_size;
+
+    const vocabSize =
+        data.model.vocab_size;
+
+    const stageDims = {
+        tokenBar: 1,
+        embeddingBar: hiddenSize,
+        layerBar: hiddenSize,
+        finalHiddenBar: hiddenSize,
+        logitsBar: vocabSize,
+        softmaxBar: vocabSize
+    };
+
+    const maxDim =
+        Math.max(
+            vocabSize,
+            hiddenSize,
+            1
+        );
+
+    for (const [id, dim] of Object.entries(stageDims)) {
+
+        const bar =
+            document.getElementById(id);
+
+        if (!bar) {
+            continue;
+        }
+
+        const pct =
+            Math.max(
+                4,
+                (Math.log(dim + 1) / Math.log(maxDim + 1)) * 100
+            );
+
+        bar.style.width =
+            `${pct}%`;
+
+    }
+
+}
+
+
+/* =========================================================
+   Jump from the pipeline's layer stage into the execution
+   trace below, opening the first layer if it's still closed.
+   ========================================================= */
+
+function jumpToExecutionTrace() {
+
+    const executionCard =
+        document.getElementById("executionCard");
+
+    if (!executionCard) {
+        return;
+    }
+
+    executionCard.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+
+    const firstLayer =
+        document.querySelector("#layers .layer");
+
+    if (
+        firstLayer &&
+        !firstLayer.classList.contains("open")
+    ) {
+        firstLayer.classList.add("open");
+    }
+
 }
 
 
@@ -3305,13 +3542,111 @@ function renderProbabilities(data) {
 
 
 /* =========================================================
+   Generation animation controls (speed + hover-to-pause)
+   ========================================================= */
+
+let genPaused = false;
+
+function getGenSpeedMultiplier() {
+
+    const slider =
+        document.getElementById("genSpeedSlider");
+
+    if (!slider) {
+        return 1;
+    }
+
+    return Number(slider.value) || 1;
+}
+
+function updateGenSpeedLabel() {
+
+    const slider =
+        document.getElementById("genSpeedSlider");
+
+    const label =
+        document.getElementById("genSpeedValue");
+
+    if (slider && label) {
+        label.textContent =
+            `${Number(slider.value).toFixed(1)}×`;
+    }
+}
+
+// waits `baseMs` of "animation time", scaled by the speed slider,
+// and fully frozen while the diagram is hovered (paused) — used
+// in place of a plain sleep() throughout renderGeneration
+function genWait(baseMs) {
+
+    return new Promise(resolve => {
+
+        let remaining = baseMs;
+        const tickMs = 40;
+
+        function tick() {
+
+            if (remaining <= 0) {
+                resolve();
+                return;
+            }
+
+            setTimeout(() => {
+
+                if (!genPaused) {
+                    remaining -= tickMs * getGenSpeedMultiplier();
+                }
+
+                tick();
+
+            }, tickMs);
+        }
+
+        tick();
+    });
+}
+
+
+/* =========================================================
    Generation
 
-   Renders the token-by-token generation loop as a single
-   live block of text: each new token is appended with a
-   brief highlight, and a small meta line above shows which
-   step is in progress and how confident the model was.
+   Renders the token-by-token generation loop as an actual
+   feedback diagram: Context -> Model -> Predicted token, then
+   looped back into Context for the next step. A dot flows
+   along each arrow, a ghost token previews the prediction
+   before it's accepted, and the whole thing can be replayed
+   or slowed down via the controls above it.
    ========================================================= */
+
+// re-runs the generation animation from the last response,
+// without re-running the model — lets the user re-watch the
+// loop without scrolling back up to the Inspect button
+async function replayGeneration() {
+
+    const data =
+        window.__lastInspectionData;
+
+    if (!data) {
+        return;
+    }
+
+    const button =
+        document.getElementById(
+            "replayGenerationButton"
+        );
+
+    button.disabled = true;
+
+    try {
+
+        await renderGeneration(data);
+
+    } finally {
+
+        button.disabled = false;
+
+    }
+}
+
 
 async function renderGeneration(data) {
 
@@ -3590,9 +3925,9 @@ function truncateForNode(text, max = 22) {
 }
 
 
-
 /* =========================================================
-   Small async delay for generation visualization
+   Small async delay, kept for anything not tied to the
+   generation speed/pause controls above
    ========================================================= */
 
 function sleep(milliseconds) {
