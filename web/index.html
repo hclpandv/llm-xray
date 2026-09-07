@@ -874,6 +874,10 @@
             min-height: 1.7em;
         }
 
+        .gen-prompt-text {
+            color: var(--text-dim);
+        }
+
         .gen-token {
             display: inline-block;
             border-radius: 3px;
@@ -1016,19 +1020,20 @@
             opacity: 1;
         }
 
-        .gen-loop.paused .gen-node.active {
+        .gen-loop.paused .gen-block.active {
             box-shadow: 0 0 0 3px rgba(72,201,208,.18);
             border-color: var(--trace);
         }
 
-        .gen-node {
+        .gen-block {
             flex: 0 0 auto;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
-            padding: 9px 16px;
-            min-width: 92px;
+            justify-content: center;
+            gap: 6px;
+            width: 128px;
+            padding: 22px 12px;
             border: 1px solid var(--line-strong);
             border-radius: var(--radius-sm);
             background: var(--panel-raised);
@@ -1036,42 +1041,40 @@
             transition: border-color .18s ease, background .18s ease, box-shadow .18s ease;
         }
 
-        .gen-node-label {
-            font-family: var(--font-mono);
-            color: var(--text-faint);
-            font-size: 9.5px;
-            letter-spacing: .06em;
-            text-transform: uppercase;
-        }
-
-        .gen-node-value {
-            font-family: var(--font-mono);
+        .gen-block-label {
+            font-family: var(--font-ui);
+            font-weight: 700;
+            font-size: 14.5px;
             color: var(--text);
-            font-size: 12.5px;
-            font-weight: 600;
-            min-height: 1.2em;
-            max-width: 140px;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
         }
 
-        .gen-node.active {
+        .gen-block-sub {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-faint);
+            letter-spacing: .02em;
+        }
+
+        .gen-block.active {
             border-color: var(--signal);
             background: rgba(240,169,68,.09);
             box-shadow: 0 0 0 3px rgba(240,169,68,.13);
         }
 
-        .gen-arrow {
-            flex: 1 1 auto;
-            min-width: 24px;
+        .gen-block.active .gen-block-sub {
+            color: var(--signal);
+        }
+
+        .gen-block-arrow {
+            flex: 0 0 auto;
+            width: 34px;
             height: 2px;
-            margin: 0 6px;
+            margin: 0 16px;
             position: relative;
             background: var(--line-strong);
         }
 
-        .gen-arrow::after {
+        .gen-block-arrow::after {
             content: "";
             position: absolute;
             right: -1px;
@@ -1083,10 +1086,10 @@
             transform: translateY(-50%) rotate(-45deg);
         }
 
-        .gen-arrow.flowing { background: var(--signal-dim); }
-        .gen-arrow.flowing::after { border-color: var(--signal); }
+        .gen-block-arrow.flowing { background: var(--signal-dim); }
+        .gen-block-arrow.flowing::after { border-color: var(--signal); }
 
-        .gen-arrow.flowing::before {
+        .gen-block-arrow.flowing::before {
             content: "";
             position: absolute;
             top: -3px;
@@ -1105,48 +1108,107 @@
             100% { left: calc(100% - 4px); opacity: 0; }
         }
 
-        .gen-loopback {
-            flex: 1 1 100%;
+        .gen-candidates {
+            flex: 1 1 240px;
+            min-width: 200px;
             display: flex;
+            flex-direction: column;
+            gap: 7px;
+        }
+
+        .gen-candidate {
+            display: grid;
+            grid-template-columns: 84px 1fr 46px;
             align-items: center;
-            gap: 6px;
-            margin-top: 14px;
-            padding-top: 12px;
-            border-top: 1px dashed var(--line);
-            font-family: var(--font-mono);
-            font-size: 11.5px;
-            font-weight: 500;
-            color: var(--text-faint);
+            gap: 10px;
             opacity: 0;
-            transform: translateY(-2px);
-            transition: opacity .15s ease, transform .15s ease, color .15s ease, border-color .15s ease;
+            transform: translateX(-6px);
+            transition: opacity .25s ease, transform .25s ease;
         }
 
-        .gen-loopback.show {
+        .gen-candidate.show {
             opacity: 1;
-            transform: translateY(0);
-            color: var(--signal);
-            border-top-color: var(--signal-dim);
+            transform: translateX(0);
         }
 
-        .gen-loopback-icon {
-            font-size: 13px;
-            line-height: 1;
+        .gen-candidate-token {
+            font-family: var(--font-mono);
+            font-size: 12.5px;
+            color: var(--text-dim);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
-        .gen-token-ghost {
-            display: inline-block;
-            border: 1px dashed var(--signal);
-            border-radius: 3px;
-            padding: 0 2px;
-            margin: 0 1px;
+        .gen-candidate-bar {
+            height: 7px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            overflow: hidden;
+        }
+
+        .gen-candidate-bar-fill {
+            height: 100%;
+            width: 0%;
+            border-radius: 999px;
+            background: var(--trace);
+            opacity: .55;
+            transition: width .4s cubic-bezier(.2,.8,.2,1);
+        }
+
+        .gen-candidate-value {
+            text-align: right;
+            font-family: var(--font-mono);
+            font-size: 11px;
             color: var(--text-faint);
-            animation: ghostPulse 1s ease-in-out infinite;
+            font-variant-numeric: tabular-nums;
         }
 
-        @keyframes ghostPulse {
-            0%, 100% { opacity: .5; }
-            50%      { opacity: .95; }
+        .gen-candidate.chosen .gen-candidate-token {
+            color: var(--signal);
+            font-weight: 700;
+        }
+
+        .gen-candidate.chosen .gen-candidate-bar-fill {
+            background: linear-gradient(90deg, var(--signal-dim), var(--signal));
+            opacity: 1;
+        }
+
+        .gen-candidate.chosen .gen-candidate-value {
+            color: var(--signal);
+        }
+
+        @media (max-width: 700px) {
+            .gen-loop {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .gen-block-arrow {
+                width: 2px;
+                height: 22px;
+                margin: 10px auto;
+            }
+
+            .gen-block-arrow::after {
+                right: -2px;
+                top: unset;
+                bottom: -1px;
+                transform: rotate(45deg);
+            }
+
+            .gen-block-arrow.flowing::before {
+                top: -4px;
+                left: -3px;
+                animation-name: genFlowMoveVertical;
+            }
+
+            @keyframes genFlowMoveVertical {
+                0%   { top: -4px; opacity: 0; }
+                18%  { opacity: 1; }
+                100% { top: calc(100% - 4px); opacity: 0; }
+            }
         }
 
         .gen-context-box {
@@ -1786,29 +1848,14 @@
 
                 <span class="gen-paused-badge">⏸ paused</span>
 
-                <div class="gen-node" id="genNodeContext">
-                    <span class="gen-node-label">Context so far</span>
-                    <span class="gen-node-value" id="genNodeContextValue">—</span>
+                <div class="gen-block" id="genBlock">
+                    <span class="gen-block-label">Transformer</span>
+                    <span class="gen-block-sub" id="genBlockSub">idle</span>
                 </div>
 
-                <div class="gen-arrow" id="genArrowIn"></div>
+                <div class="gen-block-arrow" id="genBlockArrow"></div>
 
-                <div class="gen-node" id="genNodeModel">
-                    <span class="gen-node-label">Model</span>
-                    <span class="gen-node-value" id="genNodeModelValue">idle</span>
-                </div>
-
-                <div class="gen-arrow" id="genArrowOut"></div>
-
-                <div class="gen-node" id="genNodeToken">
-                    <span class="gen-node-label">Predicted token</span>
-                    <span class="gen-node-value" id="genNodeTokenValue">—</span>
-                </div>
-
-                <div class="gen-loopback" id="genLoopback">
-                    <span class="gen-loopback-icon">↩</span>
-                    <span>token appended — fed back in as part of the next context</span>
-                </div>
+                <div class="gen-candidates" id="genCandidates"></div>
 
             </div>
 
@@ -1856,7 +1903,7 @@ async function inspectModel() {
 
             body: JSON.stringify({
                 prompt: prompt,
-                max_new_tokens: 5
+                max_new_tokens: 21
             })
 
         });
@@ -1875,13 +1922,16 @@ async function inspectModel() {
         window.__lastInspectionData =
             data;
 
+        window.__lastInspectionPrompt =
+            prompt;
+
         renderModel(data);
         renderTokens(data);
         renderPipeline(data);
         renderExecutionTrace(data);
         renderProbabilities(data);
 
-        await renderGeneration(data);
+        await renderGeneration(data, prompt);
 
         status.textContent =
             `Inspection complete — captured ` +
@@ -3638,7 +3688,7 @@ async function replayGeneration() {
 
     try {
 
-        await renderGeneration(data);
+        await renderGeneration(data, window.__lastInspectionPrompt);
 
     } finally {
 
@@ -3648,7 +3698,7 @@ async function replayGeneration() {
 }
 
 
-async function renderGeneration(data) {
+async function renderGeneration(data, promptText) {
 
     const card =
         document.getElementById(
@@ -3675,49 +3725,24 @@ async function renderGeneration(data) {
             "genContextBox"
         );
 
-    const nodeContext =
+    const block =
         document.getElementById(
-            "genNodeContext"
+            "genBlock"
         );
 
-    const nodeContextValue =
+    const blockSub =
         document.getElementById(
-            "genNodeContextValue"
+            "genBlockSub"
         );
 
-    const nodeModel =
+    const arrow =
         document.getElementById(
-            "genNodeModel"
+            "genBlockArrow"
         );
 
-    const nodeModelValue =
+    const candidatesEl =
         document.getElementById(
-            "genNodeModelValue"
-        );
-
-    const nodeToken =
-        document.getElementById(
-            "genNodeToken"
-        );
-
-    const nodeTokenValue =
-        document.getElementById(
-            "genNodeTokenValue"
-        );
-
-    const arrowIn =
-        document.getElementById(
-            "genArrowIn"
-        );
-
-    const arrowOut =
-        document.getElementById(
-            "genArrowOut"
-        );
-
-    const loopback =
-        document.getElementById(
-            "genLoopback"
+            "genCandidates"
         );
 
     card.style.display =
@@ -3726,6 +3751,26 @@ async function renderGeneration(data) {
     textEl.innerHTML =
         "";
 
+    // seed the panel with the original prompt, so generated
+    // tokens visibly get appended onto real context instead of
+    // starting from nothing
+    if (promptText) {
+
+        const promptSpan =
+            document.createElement("span");
+
+        promptSpan.className =
+            "gen-prompt-text";
+
+        promptSpan.textContent =
+            promptText;
+
+        textEl.appendChild(
+            promptSpan
+        );
+
+    }
+
     stepProb.textContent =
         "";
 
@@ -3733,14 +3778,10 @@ async function renderGeneration(data) {
         "show"
     );
 
-    nodeContext.classList.remove("active");
-    nodeModel.classList.remove("active");
-    nodeToken.classList.remove("active");
+    block.classList.remove("active");
     contextBox.classList.remove("reading");
-    loopback.classList.remove("show");
-    nodeContextValue.textContent = "—";
-    nodeModelValue.textContent = "idle";
-    nodeTokenValue.textContent = "—";
+    blockSub.textContent = "idle";
+    candidatesEl.innerHTML = "";
 
     const steps =
         Array.isArray(data.generation_steps)
@@ -3752,11 +3793,18 @@ async function renderGeneration(data) {
         stepCount.textContent =
             "";
 
-        textEl.innerHTML = `
-            <span class="generation-empty">
-                No generation steps were returned by the model.
-            </span>
-        `;
+        const emptyNote =
+            document.createElement("span");
+
+        emptyNote.className =
+            "generation-empty";
+
+        emptyNote.textContent =
+            "No generation steps were returned by the model.";
+
+        textEl.appendChild(
+            emptyNote
+        );
 
         return;
     }
@@ -3774,10 +3822,6 @@ async function renderGeneration(data) {
     const total =
         steps.length;
 
-    // running text of everything accepted so far, used to show
-    // the model "re-reading" its own output as input each step
-    let contextSoFar = "";
-
     for (
         let i = 0;
         i < total;
@@ -3793,35 +3837,76 @@ async function renderGeneration(data) {
         stepCount.textContent =
             `Token ${i + 1} of ${total}`;
 
-        // --- phase 1: the whole sequence so far is fed back in as context ---
+        // --- phase 1: the model reads the sequence so far ---
 
-        nodeContextValue.textContent =
-            truncateForNode(contextSoFar) || "(prompt)";
-
-        nodeContext.classList.add("active");
+        block.classList.add("active");
         contextBox.classList.add("reading");
-
-        flowArrow(arrowIn);
+        blockSub.textContent = "reading context…";
+        candidatesEl.innerHTML = "";
 
         await genWait(260);
 
-        // --- phase 2: the model reads it and computes ---
+        // --- phase 2: it computes probabilities for the next token ---
 
-        nodeContext.classList.remove("active");
         contextBox.classList.remove("reading");
-        nodeModel.classList.add("active");
-        nodeModelValue.textContent = "computing…";
+        blockSub.textContent = "computing…";
 
-        await genWait(300);
+        await genWait(280);
 
-        // --- phase 3: the model outputs a next-token prediction ---
+        // --- phase 3: the ranked candidates arrive ---
 
-        flowArrow(arrowOut);
+        flowArrow(arrow);
 
-        nodeModel.classList.remove("active");
-        nodeModelValue.textContent = "idle";
-        nodeToken.classList.add("active");
-        nodeTokenValue.textContent = step.token;
+        blockSub.textContent = "idle";
+
+        const candidates =
+            buildCandidateList(step);
+
+        const rows =
+            candidates.map(candidate => {
+
+                const row =
+                    document.createElement("div");
+
+                row.className =
+                    "gen-candidate" +
+                    (candidate.chosen ? " chosen" : "");
+
+                row.innerHTML = `
+                    <span class="gen-candidate-token">${escapeHtml(candidate.token)}</span>
+                    <div class="gen-candidate-bar">
+                        <div class="gen-candidate-bar-fill" style="width:0%"></div>
+                    </div>
+                    <span class="gen-candidate-value">${(candidate.probability * 100).toFixed(1)}%</span>
+                `;
+
+                candidatesEl.appendChild(row);
+
+                return row;
+
+            });
+
+        await genWait(80);
+
+        rows.forEach((row, index) => {
+
+            setTimeout(() => {
+
+                row.classList.add("show");
+
+                const fill =
+                    row.querySelector(".gen-candidate-bar-fill");
+
+                if (fill) {
+
+                    fill.style.width =
+                        `${Math.min(100, candidates[index].probability * 100)}%`;
+
+                }
+
+            }, index * 60);
+
+        });
 
         stepProb.textContent =
             `${(probability * 100).toFixed(1)}% confidence`;
@@ -3830,25 +3915,9 @@ async function renderGeneration(data) {
             "show"
         );
 
-        const ghostSpan =
-            document.createElement("span");
+        await genWait(280 + rows.length * 60);
 
-        ghostSpan.className =
-            "gen-token-ghost";
-
-        ghostSpan.textContent =
-            step.token;
-
-        textEl.insertBefore(
-            ghostSpan,
-            cursor
-        );
-
-        await genWait(420);
-
-        // --- phase 4: that token is appended, and fed back as context ---
-
-        ghostSpan.remove();
+        // --- phase 4: the chosen token is appended, feeding back into context ---
 
         const tokenSpan =
             document.createElement("span");
@@ -3864,34 +3933,53 @@ async function renderGeneration(data) {
             cursor
         );
 
-        contextSoFar += step.token;
+        block.classList.remove("active");
 
-        nodeToken.classList.remove("active");
-        loopback.classList.add("show");
-
-        await genWait(480);
+        await genWait(420);
 
         stepProb.classList.remove(
             "show"
         );
 
-        loopback.classList.remove("show");
-
-        await genWait(40);
+        await genWait(60);
 
     }
 
     cursor.remove();
 
-    nodeContextValue.textContent = truncateForNode(contextSoFar);
-    nodeModelValue.textContent = "idle";
-    nodeTokenValue.textContent = "—";
+    blockSub.textContent = "done";
 
     stepCount.textContent =
         `Generated ${total} tokens`;
 
     stepProb.textContent =
         "";
+
+}
+
+
+// turns one generation step into a ranked list the diagram can
+// show — real top-candidate data when the backend sent it,
+// otherwise just the token that was actually chosen
+function buildCandidateList(step, maxCandidates = 5) {
+
+    const raw =
+        Array.isArray(step.top_tokens) && step.top_tokens.length > 0
+            ? step.top_tokens
+            : [{ token: step.token, probability: step.probability }];
+
+    const sorted =
+        [...raw].sort(
+            (a, b) => Number(b.probability) - Number(a.probability)
+        );
+
+    return sorted
+        .slice(0, maxCandidates)
+        .map(item => ({
+            token: item.token,
+            probability: Number(item.probability),
+            chosen: item.token === step.token
+        }));
 
 }
 
@@ -3906,22 +3994,6 @@ function flowArrow(arrowEl) {
     void arrowEl.offsetWidth;
 
     arrowEl.classList.add("flowing");
-}
-
-
-// short, ellipsis-truncated preview of the running context,
-// so the "Context so far" node stays a fixed, readable width
-function truncateForNode(text, max = 22) {
-
-    if (!text) {
-        return "";
-    }
-
-    if (text.length <= max) {
-        return text;
-    }
-
-    return `…${text.slice(-max)}`;
 }
 
 
